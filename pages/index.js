@@ -664,10 +664,17 @@ export default function BirdDogExpress() {
       </a>
 
       {/* Header */}
-      <header style={{ background: "#fff", borderBottom: "0.5px solid #e5e7eb", padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-        <div>
-          <div style={{ fontSize: 16, fontWeight: 500, ...mono, letterSpacing: "0.1em", color: "#111" }} aria-label="BirdDog Express">BIRDDOG EXPRESS</div>
-          <div style={{ fontSize: 11, ...mono, letterSpacing: "0.14em", color: "#888", textTransform: "uppercase", marginTop: 1 }} aria-hidden="true">AI-powered rumor validation</div>
+      <header style={{ background: "#1B5E30", padding: "12px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <img
+            src="/birddoglogo.png"
+            alt="BirdDog Express shield logo"
+            style={{ width: 44, height: 44, objectFit: "contain", borderRadius: 4, flexShrink: 0 }}
+          />
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 500, ...mono, letterSpacing: "0.12em", color: "#F5F0E8" }} aria-label="BirdDog Express">BIRDDOG EXPRESS</div>
+            <div style={{ fontSize: 10, ...mono, letterSpacing: "0.18em", color: "#B8960C", textTransform: "uppercase", marginTop: 2 }} aria-hidden="true">AI-powered rumor validation</div>
+          </div>
         </div>
         <nav aria-label="Main navigation">
           <div style={{ display: "flex", gap: 8 }} role="tablist">
@@ -677,7 +684,7 @@ export default function BirdDogExpress() {
                 role="tab"
                 aria-selected={activeTab === tab}
                 onClick={() => setActiveTab(tab)}
-                style={{ ...mono, fontSize: 12, padding: "6px 14px", borderRadius: 6, border: "0.5px solid", borderColor: activeTab === tab ? "#d1d5db" : "#e5e7eb", background: activeTab === tab ? "#f3f4f6" : "transparent", color: activeTab === tab ? "#111" : "#888", cursor: "pointer", textTransform: "capitalize", letterSpacing: "0.08em", minHeight: 44 }}
+                style={{ ...mono, fontSize: 12, padding: "6px 14px", borderRadius: 6, border: "0.5px solid", borderColor: activeTab === tab ? "#B8960C" : "rgba(245,240,232,0.25)", background: activeTab === tab ? "#B8960C" : "transparent", color: activeTab === tab ? "#1B1200" : "#F5F0E8", cursor: "pointer", textTransform: "capitalize", letterSpacing: "0.08em", minHeight: 44, fontWeight: activeTab === tab ? 500 : 400 }}
               >
                 {tab === "history" ? `History (${history.length})` : "Tracker"}
               </button>
@@ -726,7 +733,7 @@ export default function BirdDogExpress() {
         {activeTab === "tracker" && (
           wide ? (
             <div style={{ display: "grid", gridTemplateColumns: "300px 1fr", minHeight: "calc(100vh - 57px)" }}>
-              <div style={{ background: "#fff", borderRight: "0.5px solid #e5e7eb", padding: "24px 20px" }}>
+              <div style={{ background: "#fff", borderRight: "0.5px solid #e5e7eb", borderTop: "3px solid #1B5E30", padding: "24px 20px" }}>
                 {InputPanel}
               </div>
               <div style={{ padding: "24px 20px", overflowY: "auto" }}>
