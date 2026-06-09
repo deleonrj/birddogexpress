@@ -120,7 +120,7 @@ export default async function handler(req, res) {
       method: "POST",
       headers,
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
+        model: "claude-sonnet-4-6",
         max_tokens: 4000,
         system: searchSystemPrompt,
         tools: [{ type: "web_search_20250305", name: "web_search" }],
@@ -155,7 +155,7 @@ export default async function handler(req, res) {
       method: "POST",
       headers,
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
+        model: "claude-sonnet-4-6",
         max_tokens: 2000,
         system: analysisSystemPrompt,
         messages: [{ role: "user", content: analysisUserMsg }],
