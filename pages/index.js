@@ -733,7 +733,7 @@ export default function BirdDogExpress() {
         {activeTab === "tracker" && (
           wide ? (
             <div style={{ display: "grid", gridTemplateColumns: "300px 1fr", minHeight: "calc(100vh - 57px)" }}>
-              <div style={{ background: "#fff", borderRight: "0.5px solid #e5e7eb", borderTop: "3px solid #1B5E30", padding: "24px 20px" }}>
+              <div style={{ background: "#fff", borderRight: "0.5px solid #e5e7eb", padding: "24px 20px" }}>
                 {InputPanel}
               </div>
               <div style={{ padding: "24px 20px", overflowY: "auto" }}>
