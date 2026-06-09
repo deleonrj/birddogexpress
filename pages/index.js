@@ -28,21 +28,39 @@ const MLB_TEAMS = [
 ];
 
 const STEPS = [
-  { key: "received",    label: "Rumor received",              detail: (r) => r.length > 60 ? r.substring(0, 60) + "…" : r },
-  { key: "national",    label: "Searching national reporters", detail: () => "Passan · Rosenthal · Heyman · Feinsand · Nightengale · Morosi" },
-  { key: "local",       label: "Checking local beat coverage", detail: () => "Origin beat · Destination beat · Regional outlets" },
-  { key: "crossmarket", label: "Cross-referencing markets",    detail: () => "Comparing origin · destination · national signal..." },
-  { key: "fit",         label: "Analyzing team fit",           detail: () => "Roster · Financial · Strategic · GM profile" },
-  { key: "scoring",     label: "Scoring & classification",     detail: () => "Credibility · Fit · Sentiment · Overall likelihood" },
+  { key: "received",    label: "Rumor received",               detail: (r) => r.length > 60 ? r.substring(0, 60) + "…" : r },
+  { key: "national",    label: "Searching national reporters",  detail: () => "Passan · Rosenthal · Heyman · Feinsand · Nightengale · Morosi" },
+  { key: "local",       label: "Checking local beat coverage",  detail: () => "Origin beat · Destination beat · Regional outlets" },
+  { key: "crossmarket", label: "Cross-referencing markets",     detail: () => "Comparing origin · destination · national signal" },
+  { key: "fit",         label: "Analyzing team fit",            detail: () => "Roster · Financial · Strategic · GM profile" },
+  { key: "scoring",     label: "Scoring and classification",    detail: () => "Credibility · Fit · Sentiment · Overall likelihood" },
 ];
-
 const STEP_SEQUENCE = ["received","national","local","crossmarket","fit","scoring"];
+const STEP_TIMINGS  = { received:0, national:2, local:6, crossmarket:10, fit:16, scoring:22 };
 
+const CHAR_LIMIT = 255;
 const mono = { fontFamily: "ui-monospace, 'Courier New', monospace" };
+
+// Focus ring applied globally via injected style tag
+const FOCUS_STYLE = `
+  *:focus-visible {
+    outline: 2px solid #1d4ed8;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+`;
 
 function Badge({ label, color, bg, border }) {
   return (
-    <span style={{ ...mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", padding: "3px 8px", borderRadius: 5, border: "0.5px solid " + border, background: bg, color, display: "inline-flex", alignItems: "center", whiteSpace: "nowrap" }}>
+    <span style={{
+      ...mono, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase",
+      padding: "4px 10px", borderRadius: 5, border: "0.5px solid " + border,
+      background: bg, color, display: "inline-flex", alignItems: "center", whiteSpace: "nowrap",
+    }}>
       {label}
     </span>
   );
@@ -52,61 +70,72 @@ function Ring({ value, color, label, sublabel, discounted }) {
   const r = 18;
   const circ = 2 * Math.PI * r;
   const offset = circ - (value / 100) * circ;
-  const displayColor = discounted ? "#B4B2A9" : color;
+  const displayColor = discounted ? "#5F5E5A" : color;
+  const pct = Math.round(value);
   return (
     <div style={{ textAlign: "center" }}>
-      <div style={{ fontSize: 9, ...mono, letterSpacing: "0.1em", textTransform: "uppercase", color: "#888", marginBottom: 5 }}>{label}</div>
-      <div style={{ position: "relative", width: 44, height: 44, margin: "0 auto 4px" }}>
-        <svg width="44" height="44" viewBox="0 0 44 44" style={{ transform: "rotate(-90deg)" }}>
+      <div style={{ fontSize: 11, ...mono, letterSpacing: "0.08em", textTransform: "uppercase", color: "#555", marginBottom: 5 }} aria-hidden="true">{label}</div>
+      <div
+        role="img"
+        aria-label={`${label}: ${pct}%${discounted ? " (discounted — fan-driven signal)" : ""}`}
+        style={{ position: "relative", width: 44, height: 44, margin: "0 auto 5px" }}
+      >
+        <svg width="44" height="44" viewBox="0 0 44 44" style={{ transform: "rotate(-90deg)" }} aria-hidden="true">
           <circle cx="22" cy="22" r={r} fill="none" stroke="#e5e7eb" strokeWidth="2.5" />
-          <circle cx="22" cy="22" r={r} fill="none" stroke={displayColor} strokeWidth="2.5" strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round" />
+          <circle cx="22" cy="22" r={r} fill="none" stroke={displayColor} strokeWidth="2.5"
+            strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round" />
         </svg>
-        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", ...mono, fontSize: 11, fontWeight: 500, color: displayColor }}>{value}</div>
+        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", ...mono, fontSize: 12, fontWeight: 500, color: displayColor }} aria-hidden="true">{pct}</div>
       </div>
-      <div style={{ fontSize: 9, color: "#999", ...mono }}>{sublabel}{discounted ? " ↓" : ""}</div>
+      <div style={{ fontSize: 11, color: "#666", ...mono }}>{sublabel}{discounted ? " (discounted)" : ""}</div>
     </div>
   );
 }
 
-function Panel({ children, style }) {
+function Panel({ children, style, as: Tag = "div" }) {
   return (
-    <div style={{ background: "#fff", border: "0.5px solid #e5e7eb", borderRadius: 12, padding: "14px 16px", ...style }}>
+    <Tag style={{ background: "#fff", border: "0.5px solid #e5e7eb", borderRadius: 12, padding: "14px 16px", ...style }}>
       {children}
-    </div>
+    </Tag>
   );
 }
 
-function PanelTitle({ children }) {
-  return <div style={{ fontSize: 9, ...mono, letterSpacing: "0.12em", textTransform: "uppercase", color: "#888", marginBottom: 8 }}>{children}</div>;
+function SectionHeading({ children }) {
+  return (
+    <h3 style={{ fontSize: 11, ...mono, letterSpacing: "0.12em", textTransform: "uppercase", color: "#666", marginBottom: 8, fontWeight: 500 }}>
+      {children}
+    </h3>
+  );
 }
 
 function SourceRow({ name, context, status, last }) {
   const s = status === "Reported" ? { bg: "#EAF3DE", color: "#3B6D11" } : { bg: "#F1EFE8", color: "#5F5E5A" };
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 0", borderBottom: last ? "none" : "0.5px solid #f3f4f6" }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0", borderBottom: last ? "none" : "0.5px solid #f3f4f6" }}>
       <div>
-        <div style={{ fontSize: 11, ...mono, color: "#111" }}>{name}</div>
-        <div style={{ fontSize: 9, ...mono, color: "#999", textTransform: "uppercase", marginTop: 1 }}>{context}</div>
+        <div style={{ fontSize: 12, ...mono, color: "#111" }}>{name}</div>
+        <div style={{ fontSize: 11, color: "#777", marginTop: 1 }}>{context}</div>
       </div>
-      <span style={{ fontSize: 9, ...mono, textTransform: "uppercase", padding: "2px 6px", borderRadius: 4, background: s.bg, color: s.color }}>{status}</span>
+      <span style={{ fontSize: 11, ...mono, textTransform: "uppercase", padding: "3px 8px", borderRadius: 4, background: s.bg, color: s.color, minWidth: 44, textAlign: "center" }}>
+        {status}
+      </span>
     </div>
   );
 }
 
-function MarketRow({ label, context, status, note, last }) {
-  const dot = status === "Confirmed" ? "#639922" : status === "Partial" || status === "Elevated" ? "#BA7517" : "#A32D2D";
+function MarketRow({ label, context, statusText, dotColor, note, last }) {
   return (
-    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "6px 0", borderBottom: last ? "none" : "0.5px solid #f3f4f6", gap: 6 }}>
+    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "8px 0", borderBottom: last ? "none" : "0.5px solid #f3f4f6", gap: 8 }}>
       <div>
-        <div style={{ fontSize: 11, ...mono, color: "#111" }}>{label}</div>
-        <div style={{ fontSize: 9, ...mono, color: "#999", textTransform: "uppercase", marginTop: 1 }}>{context}</div>
+        <div style={{ fontSize: 12, ...mono, color: "#111" }}>{label}</div>
+        <div style={{ fontSize: 11, color: "#777", marginTop: 1 }}>{context}</div>
       </div>
-      <div style={{ textAlign: "right" }}>
-        <div style={{ fontSize: 11, ...mono, display: "flex", alignItems: "center", gap: 4, justifyContent: "flex-end", color: "#111" }}>
-          <span style={{ width: 5, height: 5, borderRadius: "50%", background: dot, display: "inline-block", flexShrink: 0 }} />
-          {status}
+      <div style={{ textAlign: "right", flexShrink: 0 }}>
+        <div style={{ fontSize: 12, ...mono, display: "flex", alignItems: "center", gap: 5, justifyContent: "flex-end", color: "#111" }}>
+          <span style={{ width: 6, height: 6, borderRadius: "50%", background: dotColor, display: "inline-block", flexShrink: 0 }} aria-hidden="true" />
+          {statusText}
         </div>
-        {note && <div style={{ fontSize: 9, ...mono, color: "#999", marginTop: 1 }}>{note}</div>}
+        {note && <div style={{ fontSize: 11, color: "#777", marginTop: 1 }}>{note}</div>}
       </div>
     </div>
   );
@@ -116,57 +145,67 @@ function ProgressSteps({ rumor, activeStep, elapsed }) {
   const activeIdx = STEP_SEQUENCE.indexOf(activeStep);
   return (
     <Panel>
-      <PanelTitle>Validating rumor</PanelTitle>
-      {STEPS.map((step, i) => {
-        const done = i < activeIdx;
-        const active = i === activeIdx;
+      <SectionHeading>Validating rumor</SectionHeading>
+      <div role="status" aria-live="polite" aria-label={`Validation step: ${STEPS[activeIdx]?.label || "processing"}`} style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0,0,0,0)" }}>
+        {STEPS[activeIdx]?.label}
+      </div>
+      {STEPS.map((s, i) => {
+        const done    = i < activeIdx;
+        const active  = i === activeIdx;
         const pending = i > activeIdx;
         return (
-          <div key={step.key} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "9px 0", borderBottom: i < STEPS.length - 1 ? "0.5px solid #f3f4f6" : "none" }}>
-            <div style={{ width: 20, height: 20, borderRadius: "50%", flexShrink: 0, marginTop: 1, display: "flex", alignItems: "center", justifyContent: "center", background: done ? "#EAF3DE" : active ? "#f3f4f6" : "#f9fafb", border: done ? "none" : "0.5px solid #e5e7eb" }}>
-              {done && <span style={{ fontSize: 10, color: "#3B6D11" }}>✓</span>}
-              {active && (
-                <div style={{ width: 10, height: 10, border: "1.5px solid #e5e7eb", borderTopColor: "#111", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
-              )}
+          <div key={s.key} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "9px 0", borderBottom: i < STEPS.length - 1 ? "0.5px solid #f3f4f6" : "none" }}>
+            <div
+              aria-hidden="true"
+              style={{ width: 22, height: 22, borderRadius: "50%", flexShrink: 0, marginTop: 1, display: "flex", alignItems: "center", justifyContent: "center", background: done ? "#EAF3DE" : "#f3f4f6", border: done ? "none" : "0.5px solid #e5e7eb" }}
+            >
+              {done   && <span style={{ fontSize: 11, color: "#3B6D11", fontWeight: 700 }}>✓</span>}
+              {active && <div style={{ width: 10, height: 10, border: "1.5px solid #d1d5db", borderTopColor: "#111", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />}
               {pending && <span style={{ width: 4, height: 4, borderRadius: "50%", background: "#d1d5db", display: "block" }} />}
             </div>
             <div>
-              <div style={{ fontSize: 12, fontWeight: active ? 500 : 400, color: pending ? "#999" : "#111", marginBottom: 2 }}>{step.label}</div>
-              <div style={{ fontSize: 10, ...mono, color: active ? "#111" : "#bbb" }}>{step.detail(rumor)}</div>
+              <div style={{ fontSize: 13, fontWeight: active ? 500 : 400, color: pending ? "#aaa" : "#111", marginBottom: 2 }}>{s.label}</div>
+              <div style={{ fontSize: 11, color: active ? "#555" : "#ccc", ...mono }}>{s.detail(rumor)}</div>
             </div>
           </div>
         );
       })}
-      <div style={{ fontSize: 10, ...mono, color: "#ccc", textAlign: "center", marginTop: 12, letterSpacing: "0.06em" }}>
+      <div aria-live="off" style={{ fontSize: 11, ...mono, color: "#bbb", textAlign: "center", marginTop: 12, letterSpacing: "0.06em" }}>
         Scanning · {elapsed}s elapsed
       </div>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </Panel>
   );
 }
 
 export default function BirdDogExpress() {
-  const [step, setStep] = useState("input");
-  const [rumor, setRumor] = useState("");
+  const [step, setStep]             = useState("input");
+  const [rumor, setRumor]           = useState("");
   const [validation, setValidation] = useState(null);
   const [activeStep, setActiveStep] = useState("received");
-  const [elapsed, setElapsed] = useState(0);
-  const [tweet, setTweet] = useState("");
+  const [elapsed, setElapsed]       = useState(0);
+  const [tweet, setTweet]           = useState("");
   const [bskyHandle, setBskyHandle] = useState("");
-  const [bskyAppPassword, setBskyAppPassword] = useState("");
-  const [posting, setPosting] = useState(false);
+  const [bskyAppPwd, setBskyAppPwd] = useState("");
+  const [posting, setPosting]       = useState(false);
   const [postResult, setPostResult] = useState(null);
-  const [showBskyForm, setShowBskyForm] = useState(false);
-  const [history, setHistory] = useState([]);
-  const [activeTab, setActiveTab] = useState("tracker");
-  const [copyLabel, setCopyLabel] = useState("Copy text");
-  const [errorMsg, setErrorMsg] = useState(null);
+  const [showBsky, setShowBsky]     = useState(false);
+  const [history, setHistory]       = useState([]);
+  const [activeTab, setActiveTab]   = useState("tracker");
+  const [copyLabel, setCopyLabel]   = useState("Copy text");
+  const [errorMsg, setErrorMsg]     = useState(null);
   const [teamRecords, setTeamRecords] = useState({});
-  const timerRef = useRef(null);
-  const startRef = useRef(null);
+  const [wide, setWide]             = useState(false);
+  const timerRef   = useRef(null);
+  const startRef   = useRef(null);
+  const resultRef  = useRef(null);
+  const rumorRef   = useRef(null);
 
-  // Step auto-advance during validation (fallback if SSE status messages are sparse)
-  const STEP_TIMINGS = { received: 0, national: 2, local: 6, crossmarket: 10, fit: 16, scoring: 22 };
+  useEffect(() => {
+    const check = () => setWide(window.innerWidth >= 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   useEffect(() => {
     if (step === "validating") {
@@ -184,44 +223,46 @@ export default function BirdDogExpress() {
     return () => clearInterval(timerRef.current);
   }, [step]);
 
+  // Move focus to results on mobile when result arrives
+  useEffect(() => {
+    if (step === "result" && !wide && resultRef.current) {
+      resultRef.current.focus();
+    }
+  }, [step, wide]);
+
   const validate = useCallback(async () => {
-    if (!rumor.trim()) return;
+    if (!rumor.trim() || rumor.length > CHAR_LIMIT) return;
     setStep("validating");
     setValidation(null);
     setPostResult(null);
     setErrorMsg(null);
     setTeamRecords({});
     setActiveStep("received");
-
     try {
       const res = await fetch("/api/validate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ rumor }),
       });
-
       if (!res.ok) throw new Error("Validation failed (" + res.status + ")");
-
-      const reader = res.body.getReader();
+      const reader  = res.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
-
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split("\n");
         buffer = lines.pop();
-
         for (const line of lines) {
           if (line.startsWith("event: ")) continue;
           if (!line.startsWith("data: ")) continue;
           try {
             const payload = JSON.parse(line.slice(6));
             if (payload.message) {
-              const msgLower = payload.message.toLowerCase();
-              if (msgLower.includes("scan")) setActiveStep("national");
-              if (msgLower.includes("analyz")) setActiveStep("crossmarket");
+              const m = payload.message.toLowerCase();
+              if (m.includes("scan"))   setActiveStep("national");
+              if (m.includes("analyz")) setActiveStep("crossmarket");
             }
             if (payload.success === true && payload.data) {
               const parsed = payload.data;
@@ -232,7 +273,7 @@ export default function BirdDogExpress() {
                 setTweet(parsed.tweet || "");
                 if (payload.standings?.records) setTeamRecords(payload.standings.records);
                 setStep("result");
-                setHistory((prev) => [{
+                setHistory(prev => [{
                   id: Date.now(), rumor,
                   verdict: parsed.verdict,
                   classification: parsed.rumor_classification,
@@ -256,21 +297,21 @@ export default function BirdDogExpress() {
   }, [rumor]);
 
   const postToBluesky = useCallback(async () => {
-    if (!bskyHandle || !bskyAppPassword || !tweet) return;
+    if (!bskyHandle || !bskyAppPwd || !tweet) return;
     setPosting(true); setPostResult(null);
     try {
-      const sessionRes = await fetch("https://bsky.social/xrpc/com.atproto.server.createSession", {
+      const sRes = await fetch("https://bsky.social/xrpc/com.atproto.server.createSession", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ identifier: bskyHandle, password: bskyAppPassword }),
+        body: JSON.stringify({ identifier: bskyHandle, password: bskyAppPwd }),
       });
-      const session = await sessionRes.json();
+      const session = await sRes.json();
       if (!session.accessJwt) throw new Error(session.message || "Auth failed");
-      const postRes = await fetch("https://bsky.social/xrpc/com.atproto.repo.createRecord", {
+      const pRes = await fetch("https://bsky.social/xrpc/com.atproto.repo.createRecord", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: "Bearer " + session.accessJwt },
         body: JSON.stringify({ repo: session.did, collection: "app.bsky.feed.post", record: { text: tweet, createdAt: new Date().toISOString(), langs: ["en-US"] } }),
       });
-      const pd = await postRes.json();
+      const pd = await pRes.json();
       if (pd.uri) setPostResult({ success: true });
       else throw new Error(pd.message || "Post failed");
     } catch (err) {
@@ -278,76 +319,137 @@ export default function BirdDogExpress() {
     } finally {
       setPosting(false);
     }
-  }, [bskyHandle, bskyAppPassword, tweet]);
+  }, [bskyHandle, bskyAppPwd, tweet]);
 
   const reset = () => {
     setStep("input"); setValidation(null); setTweet("");
-    setPostResult(null); setShowBskyForm(false); setErrorMsg(null);
+    setPostResult(null); setShowBsky(false); setErrorMsg(null);
+    setTimeout(() => rumorRef.current?.focus(), 50);
   };
 
-  const cfg = validation ? (VERDICT_CONFIG[validation.verdict] || VERDICT_CONFIG.UNVERIFIED) : null;
+  const cfg         = validation ? (VERDICT_CONFIG[validation.verdict] || VERDICT_CONFIG.UNVERIFIED) : null;
   const classifyCfg = validation?.rumor_classification ? (CLASSIFICATION_CONFIG[validation.rumor_classification] || null) : null;
-  const today = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  const today       = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  const remaining   = CHAR_LIMIT - rumor.length;
+  const charColor   = remaining < 0 ? "#A32D2D" : remaining < 40 ? "#854F0B" : "#777";
+  const canSubmit   = rumor.trim().length > 0 && remaining >= 0 && step !== "validating";
 
   const inputBase = {
     width: "100%", boxSizing: "border-box",
     background: "#f9fafb", border: "0.5px solid #e5e7eb",
-    borderRadius: 8, color: "#111", fontSize: 13,
+    borderRadius: 8, color: "#111", fontSize: 14,
     padding: "10px 12px", fontFamily: "inherit", outline: "none",
+    minHeight: 44,
   };
 
-  // Responsive: split on wide, stack on narrow
-  const isWide = typeof window !== "undefined" && window.innerWidth >= 768;
-  const [wide, setWide] = useState(false);
-  useEffect(() => {
-    const check = () => setWide(window.innerWidth >= 768);
-    check();
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
-  }, []);
+  const btnBase = {
+    border: "none", borderRadius: 8, padding: "12px 20px",
+    fontSize: 14, fontWeight: 500, cursor: "pointer",
+    ...mono, letterSpacing: "0.06em",
+    minHeight: 44, display: "inline-flex", alignItems: "center", justifyContent: "center",
+  };
 
-  const rightContent = (
-    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+  function marketDot(status) {
+    if (status === "Confirmed") return "#639922";
+    if (status === "Partial" || status === "Elevated") return "#BA7517";
+    return "#A32D2D";
+  }
+
+  const InputPanel = (
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <div>
+        <div style={{ fontSize: 17, fontWeight: 500, color: "#111", marginBottom: 5 }}>Validate a rumor</div>
+        <div style={{ fontSize: 13, color: "#666", lineHeight: 1.65 }}>
+          Paste any MLB trade or signing rumor. BirdDog checks it across national reporters, beat writers, and both team markets.
+        </div>
+      </div>
+
+      <div>
+        <label htmlFor="rumor-input" style={{ display: "block", fontSize: 11, ...mono, color: "#666", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>
+          Rumor <span aria-hidden="true">*</span><span style={{ position: "absolute", width: 1, height: 1, overflow: "hidden" }}> (required)</span>
+        </label>
+        <textarea
+          id="rumor-input"
+          ref={rumorRef}
+          value={rumor}
+          onChange={(e) => setRumor(e.target.value)}
+          onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && canSubmit) validate(); }}
+          placeholder="e.g. The Mets are in discussions with the Cubs about Cody Bellinger..."
+          rows={4}
+          maxLength={CHAR_LIMIT + 20}
+          aria-describedby="char-count rumor-hint"
+          aria-required="true"
+          style={{ ...inputBase, resize: "vertical", lineHeight: 1.7, fontSize: 14 }}
+        />
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 5 }}>
+          <span id="rumor-hint" style={{ fontSize: 11, color: "#aaa", ...mono }}>Cmd+Enter to submit</span>
+          <span id="char-count" aria-live="polite" style={{ fontSize: 11, ...mono, color: charColor }}>
+            {remaining < 0 ? `${Math.abs(remaining)} over limit` : `${remaining} left`}
+          </span>
+        </div>
+      </div>
+
+      <hr style={{ border: "none", borderTop: "0.5px solid #e5e7eb", margin: 0 }} />
+
+      <button
+        onClick={step === "result" ? reset : validate}
+        disabled={!canSubmit && step !== "result"}
+        aria-disabled={!canSubmit && step !== "result"}
+        aria-label={step === "validating" ? "Validation in progress" : step === "result" ? "Clear results and validate a new rumor" : "Validate this rumor"}
+        style={{
+          ...btnBase,
+          background: (!canSubmit && step !== "result") ? "#e5e7eb" : "#111",
+          color: (!canSubmit && step !== "result") ? "#999" : "#fff",
+          width: "100%",
+        }}
+      >
+        {step === "validating" ? "Validating…" : step === "result" ? "← New rumor" : "Validate →"}
+      </button>
+    </div>
+  );
+
+  const ResultsPanel = (
+    <div
+      ref={resultRef}
+      tabIndex={-1}
+      aria-live="polite"
+      aria-label="Validation results"
+      style={{ display: "flex", flexDirection: "column", gap: 12, outline: "none" }}
+    >
       {step === "input" && (
-        <Panel style={{ border: "none", background: "transparent" }}>
-          <div style={{ textAlign: "center", padding: "40px 0", color: "#ccc" }}>
-            <div style={{ fontSize: 32, marginBottom: 12 }}>⚾</div>
-            <div style={{ fontSize: 13, ...mono, letterSpacing: "0.08em" }}>Results will appear here</div>
-          </div>
-        </Panel>
+        <div style={{ textAlign: "center", padding: "60px 20px", color: "#ccc" }}>
+          <div style={{ fontSize: 32, marginBottom: 12 }} aria-hidden="true">⚾</div>
+          <div style={{ fontSize: 13, ...mono }}>Results will appear here</div>
+        </div>
       )}
 
-      {step === "validating" && (
-        <ProgressSteps rumor={rumor} activeStep={activeStep} elapsed={elapsed} />
-      )}
+      {step === "validating" && <ProgressSteps rumor={rumor} activeStep={activeStep} elapsed={elapsed} />}
 
       {step === "error" && (
-        <>
-          <Panel style={{ border: "0.5px solid #F09595", background: "#FCEBEB" }}>
-            <div style={{ fontSize: 13, color: "#791F1F", fontWeight: 500, marginBottom: 6 }}>Validation failed</div>
-            <div style={{ fontSize: 11, color: "#A32D2D", ...mono, lineHeight: 1.6, wordBreak: "break-all" }}>{errorMsg}</div>
-          </Panel>
-          {!wide && <button onClick={reset} style={{ background: "transparent", border: "0.5px solid #e5e7eb", color: "#999", borderRadius: 8, padding: "8px 18px", fontSize: 11, cursor: "pointer", ...mono, alignSelf: "flex-start" }}>← Try again</button>}
-        </>
+        <Panel role="alert">
+          <SectionHeading>Validation failed</SectionHeading>
+          <p style={{ fontSize: 13, color: "#791F1F", ...mono, lineHeight: 1.6, wordBreak: "break-all", margin: 0 }}>{errorMsg}</p>
+        </Panel>
       )}
 
       {step === "result" && validation && cfg && (
         <>
+          {/* Hero */}
           <Panel style={{ background: "#f9fafb" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 10, alignItems: "start" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 12, alignItems: "start" }}>
               <div>
-                <div style={{ fontSize: 14, fontWeight: 500, color: "#111", lineHeight: 1.5, marginBottom: 3 }}>
-                  {rumor.length > 90 ? rumor.substring(0, 90) + "…" : rumor}
-                </div>
-                <div style={{ fontSize: 10, ...mono, color: "#999", textTransform: "uppercase", letterSpacing: "0.08em" }}>Trade rumor · {today}</div>
+                <p style={{ fontSize: 14, fontWeight: 500, color: "#111", lineHeight: 1.5, margin: "0 0 4px" }}>
+                  {rumor.length > 100 ? rumor.substring(0, 100) + "…" : rumor}
+                </p>
+                <div style={{ fontSize: 11, ...mono, color: "#888", textTransform: "uppercase", letterSpacing: "0.08em" }}>Trade rumor · {today}</div>
               </div>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 7 }}>
                 <Badge {...cfg} />
                 {classifyCfg && <Badge {...classifyCfg} />}
                 <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: 9, ...mono, color: "#999", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 2 }}>Overall score</div>
-                  <div style={{ fontSize: 24, fontWeight: 500, ...mono, color: cfg.color, lineHeight: 1 }}>{validation.overall_likelihood}</div>
-                  <div style={{ width: 80, height: 2, background: "#e5e7eb", borderRadius: 2, overflow: "hidden", marginTop: 4, marginLeft: "auto" }}>
+                  <div style={{ fontSize: 11, ...mono, color: "#888", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 2 }}>Overall score</div>
+                  <div style={{ fontSize: 24, fontWeight: 500, ...mono, color: cfg.color, lineHeight: 1 }} aria-label={`Overall score: ${validation.overall_likelihood} out of 100`}>{validation.overall_likelihood}</div>
+                  <div style={{ width: 80, height: 3, background: "#e5e7eb", borderRadius: 2, overflow: "hidden", marginTop: 4, marginLeft: "auto" }} aria-hidden="true">
                     <div style={{ height: "100%", background: cfg.color, borderRadius: 2, width: validation.overall_likelihood + "%" }} />
                   </div>
                 </div>
@@ -355,78 +457,93 @@ export default function BirdDogExpress() {
             </div>
           </Panel>
 
+          {/* Fan-driven banner */}
           {validation.rumor_classification === "FAN_DRIVEN" && (
-            <Panel style={{ background: "#FAEEDA", border: "0.5px solid #EF9F27" }}>
-              <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
-                <span style={{ fontSize: 13, marginTop: 1, flexShrink: 0 }}>ⓘ</span>
-                <div style={{ fontSize: 11, color: "#633806", lineHeight: 1.6 }}>
-                  <strong style={{ color: "#412402", fontWeight: 500 }}>Fan-driven signal detected.</strong> High fan interest without reporter corroboration is a noise indicator. Sentiment discounted from overall score.
-                </div>
+            <Panel style={{ background: "#FAEEDA", border: "0.5px solid #EF9F27" }} role="note">
+              <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                <span aria-hidden="true" style={{ fontSize: 14, marginTop: 1, flexShrink: 0 }}>ⓘ</span>
+                <p style={{ fontSize: 13, color: "#633806", lineHeight: 1.6, margin: 0 }}>
+                  <strong style={{ color: "#412402", fontWeight: 500 }}>Fan-driven signal detected.</strong> High fan interest without reporter corroboration is a noise indicator, not a deal signal. Sentiment has been discounted from the overall score.
+                </p>
               </div>
             </Panel>
           )}
 
+          {/* Rings */}
           <Panel>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 6 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>
               <Ring value={validation.credibility_score} color={cfg.color} label="Credibility" sublabel="Source weight" />
-              <Ring value={validation.fit_score} color={cfg.color} label="Fit" sublabel="Team alignment" />
+              <Ring value={validation.fit_score}         color={cfg.color} label="Fit"         sublabel="Team alignment" />
               <Ring value={validation.sentiment_score || 0} color={cfg.color} label="Sentiment" sublabel="Market signal" discounted={validation.sentiment_discounted} />
             </div>
           </Panel>
 
+          {/* Summary */}
           <Panel>
-            <PanelTitle>Analysis summary</PanelTitle>
-            <p style={{ fontSize: 12, lineHeight: 1.75, color: "#444", margin: 0 }}>{validation.summary}</p>
+            <SectionHeading>Analysis summary</SectionHeading>
+            <p style={{ fontSize: 13, lineHeight: 1.75, color: "#444", margin: 0 }}>{validation.summary}</p>
           </Panel>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          {/* Sources + Cross-market — stack on mobile */}
+          <div style={{ display: "grid", gridTemplateColumns: wide ? "1fr 1fr" : "1fr", gap: 12 }}>
             <Panel>
-              <PanelTitle>Sources checked</PanelTitle>
+              <SectionHeading>Sources checked</SectionHeading>
               {validation.sources_found?.length > 0
                 ? validation.sources_found.slice(0, 5).map((s, i, arr) => {
                     const parts = s.split(" - ");
                     const hasReport = !s.toLowerCase().includes("not found") && !s.toLowerCase().includes("no report");
                     return <SourceRow key={i} name={parts[0] || s} context={parts[1] || ""} status={hasReport ? "Reported" : "No report"} last={i === arr.length - 1} />;
                   })
-                : <div style={{ fontSize: 11, color: "#999" }}>No sources found.</div>
+                : <p style={{ fontSize: 13, color: "#999", margin: 0 }}>No sources found.</p>
               }
             </Panel>
             <Panel>
-              <PanelTitle>Cross-market coverage</PanelTitle>
+              <SectionHeading>Cross-market coverage</SectionHeading>
               {(() => {
                 const cm = validation.cross_market;
-                if (!cm) return (
-                  <>
-                    <MarketRow label="National media" context="ESPN, Athletic, MLB.com" status={validation.national?.toLowerCase().includes("no") ? "Silent" : "Partial"} note="" />
-                    <MarketRow label="Origin beat" context="Local coverage" status={validation.origin_market?.toLowerCase().includes("no credible") ? "Silent" : "Partial"} note="" />
-                    <MarketRow label="Destination beat" context="Local coverage" status={validation.destination_market?.toLowerCase().includes("no credible") ? "Silent" : "Partial"} note="" />
-                    <MarketRow label="Social sentiment" context="Fan vs. credible" status={validation.sentiment_discounted ? "Elevated" : "Low"} note={validation.sentiment_discounted ? "Fan-driven · discounted" : ""} last />
-                  </>
-                );
-                const natStatus = cm.national_media?.status === "CONFIRMED" ? "Confirmed" : cm.national_media?.status === "PARTIAL" ? "Partial" : "Silent";
+                if (!cm) {
+                  const natSt  = validation.national?.toLowerCase().includes("no") ? "Silent" : "Partial";
+                  const origSt = validation.origin_market?.toLowerCase().includes("no credible") ? "Silent" : "Partial";
+                  const destSt = validation.destination_market?.toLowerCase().includes("no credible") ? "Silent" : "Partial";
+                  const sentSt = validation.sentiment_discounted ? "Elevated" : "Low";
+                  return (
+                    <>
+                      <MarketRow label="National media"   context="ESPN, Athletic, MLB.com" statusText={natSt}  dotColor={marketDot(natSt)}  note="" />
+                      <MarketRow label="Origin beat"      context="Local coverage"          statusText={origSt} dotColor={marketDot(origSt)} note="" />
+                      <MarketRow label="Destination beat" context="Local coverage"          statusText={destSt} dotColor={marketDot(destSt)} note="" />
+                      <MarketRow label="Social sentiment" context="Fan vs. credible"        statusText={sentSt} dotColor={marketDot(sentSt)} note={validation.sentiment_discounted ? "Fan-driven · discounted" : ""} last />
+                    </>
+                  );
+                }
+                const natSt   = cm.national_media?.status === "CONFIRMED" ? "Confirmed" : cm.national_media?.status === "PARTIAL" ? "Partial" : "Silent";
+                const natNote = cm.national_media ? `${cm.national_media.reporters_count} of ${cm.national_media.of_total} reporting` : "";
+                const origSt  = cm.origin_beat?.status === "CONFIRMED" ? "Confirmed" : "Silent";
+                const destSt  = cm.destination_beat?.status === "CONFIRMED" ? "Confirmed" : "Silent";
+                const sentSt  = validation.sentiment_discounted ? "Elevated" : "Low";
                 return (
                   <>
-                    <MarketRow label="National media" context="ESPN, Athletic, MLB.com" status={natStatus} note={cm.national_media ? `${cm.national_media.reporters_count} of ${cm.national_media.of_total}` : ""} />
-                    <MarketRow label="Origin beat" context={cm.origin_beat?.outlet || "Local"} status={cm.origin_beat?.status === "CONFIRMED" ? "Confirmed" : "Silent"} note="" />
-                    <MarketRow label="Destination beat" context={cm.destination_beat?.outlet || "Local"} status={cm.destination_beat?.status === "CONFIRMED" ? "Confirmed" : "Silent"} note="" />
-                    <MarketRow label="Social sentiment" context="Fan vs. credible" status={validation.sentiment_discounted ? "Elevated" : "Low"} note={validation.sentiment_discounted ? "Fan-driven · discounted" : ""} last />
+                    <MarketRow label="National media"   context="ESPN, Athletic, MLB.com"      statusText={natSt}  dotColor={marketDot(natSt)}  note={natNote} />
+                    <MarketRow label="Origin beat"      context={cm.origin_beat?.outlet || "Local"}      statusText={origSt} dotColor={marketDot(origSt)} note="" />
+                    <MarketRow label="Destination beat" context={cm.destination_beat?.outlet || "Local"} statusText={destSt} dotColor={marketDot(destSt)} note="" />
+                    <MarketRow label="Social sentiment" context="Fan vs. credible"              statusText={sentSt} dotColor={marketDot(sentSt)} note={validation.sentiment_discounted ? "Fan-driven · discounted" : ""} last />
                   </>
                 );
               })()}
             </Panel>
           </div>
 
+          {/* Live standings */}
           {Object.keys(teamRecords).length > 0 && (() => {
             const allText = [validation.summary, validation.origin_market, validation.destination_market].join(" ").toLowerCase();
-            const found = MLB_TEAMS.filter((t) => allText.includes(t)).map((t) => teamRecords[t]).filter(Boolean).filter((v, i, a) => a.findIndex((x) => x.fullName === v.fullName) === i);
+            const found   = MLB_TEAMS.filter(t => allText.includes(t)).map(t => teamRecords[t]).filter(Boolean).filter((v,i,a) => a.findIndex(x => x.fullName === v.fullName) === i);
             if (!found.length) return null;
             return (
               <Panel>
-                <PanelTitle>Live standings · {today}</PanelTitle>
+                <SectionHeading>Live standings · {today}</SectionHeading>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  {found.map((t) => (
-                    <div key={t.fullName} style={{ background: "#f9fafb", border: "0.5px solid #e5e7eb", borderRadius: 8, padding: "7px 14px", textAlign: "center" }}>
-                      <div style={{ fontSize: 10, ...mono, color: "#999", marginBottom: 2 }}>{t.fullName}</div>
+                  {found.map(t => (
+                    <div key={t.fullName} style={{ background: "#f9fafb", border: "0.5px solid #e5e7eb", borderRadius: 8, padding: "8px 14px", textAlign: "center", minWidth: 44 }}>
+                      <div style={{ fontSize: 11, ...mono, color: "#777", marginBottom: 2 }}>{t.fullName}</div>
                       <div style={{ fontSize: 18, fontWeight: 500, ...mono, color: "#111" }}>{t.record}</div>
                     </div>
                   ))}
@@ -435,66 +552,90 @@ export default function BirdDogExpress() {
             );
           })()}
 
+          {/* Fit analysis */}
           {validation.fit_analysis && (
             <Panel>
-              <PanelTitle>Fit analysis</PanelTitle>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11, ...mono }}>
-                <thead>
-                  <tr>
-                    <th style={{ textAlign: "left", paddingBottom: 6, fontWeight: 400, fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: "#999" }}>Metric</th>
-                    <th style={{ textAlign: "left", paddingBottom: 6, fontWeight: 400, fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: "#999" }}>Finding</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[["Roster", "roster"], ["Financial", "financial"], ["Strategic", "strategic"], ["GM / Front office", "gm_profile"]].map(([lbl, key], i) => {
-                    const val = validation.fit_analysis[key];
-                    if (!val || val === "—") return null;
-                    return (
-                      <tr key={key} style={{ borderTop: i === 0 ? "none" : "0.5px solid #f3f4f6" }}>
-                        <td style={{ padding: "6px 0", color: "#111", width: 100, verticalAlign: "top" }}>{lbl}</td>
-                        <td style={{ padding: "6px 0", color: "#666", lineHeight: 1.6 }}>{val}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+              <SectionHeading>Fit analysis</SectionHeading>
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, ...mono, tableLayout: "fixed" }}>
+                  <thead>
+                    <tr>
+                      <th scope="col" style={{ textAlign: "left", paddingBottom: 8, fontWeight: 400, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", width: "30%" }}>Metric</th>
+                      <th scope="col" style={{ textAlign: "left", paddingBottom: 8, fontWeight: 400, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888" }}>Finding</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[["Roster","roster"],["Financial","financial"],["Strategic","strategic"],["GM / Front office","gm_profile"]].map(([lbl,key],i) => {
+                      const val = validation.fit_analysis[key];
+                      if (!val || val === "—") return null;
+                      return (
+                        <tr key={key} style={{ borderTop: i === 0 ? "none" : "0.5px solid #f3f4f6" }}>
+                          <th scope="row" style={{ padding: "8px 0", color: "#111", verticalAlign: "top", fontWeight: 500, textAlign: "left" }}>{lbl}</th>
+                          <td style={{ padding: "8px 0", color: "#555", lineHeight: 1.7 }}>{val}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </Panel>
           )}
 
+          {/* Reasoning */}
           <Panel>
-            <PanelTitle>Reasoning</PanelTitle>
-            <p style={{ fontSize: 12, lineHeight: 1.75, color: "#444", margin: 0 }}>{validation.reasoning}</p>
+            <SectionHeading>Reasoning</SectionHeading>
+            <p style={{ fontSize: 13, lineHeight: 1.75, color: "#444", margin: 0 }}>{validation.reasoning}</p>
             {validation.qc_footer && (
-              <div style={{ fontSize: 10, color: "#ccc", ...mono, marginTop: 10, paddingTop: 8, borderTop: "0.5px solid #f3f4f6" }}>{validation.qc_footer}</div>
+              <p style={{ fontSize: 11, color: "#bbb", ...mono, marginTop: 10, paddingTop: 8, borderTop: "0.5px solid #f3f4f6", margin: "10px 0 0" }}>{validation.qc_footer}</p>
             )}
           </Panel>
 
+          {/* Post editor */}
           <Panel>
-            <PanelTitle>Post text</PanelTitle>
-            <textarea value={tweet} onChange={(e) => setTweet(e.target.value)} rows={3} style={{ ...inputBase, resize: "vertical", lineHeight: 1.6, marginBottom: 8 }} />
+            <SectionHeading>Post text</SectionHeading>
+            <label htmlFor="tweet-input" style={{ position: "absolute", width: 1, height: 1, overflow: "hidden" }}>Post text for BlueSky</label>
+            <textarea
+              id="tweet-input"
+              value={tweet}
+              onChange={(e) => setTweet(e.target.value)}
+              rows={3}
+              aria-describedby="tweet-count"
+              style={{ ...inputBase, resize: "vertical", lineHeight: 1.6, marginBottom: 8 }}
+            />
             <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-              <span style={{ fontSize: 10, ...mono, color: (280 - tweet.length) < 0 ? "#A32D2D" : "#999" }}>{280 - tweet.length} remaining</span>
+              <span id="tweet-count" aria-live="polite" style={{ fontSize: 11, ...mono, color: (280 - tweet.length) < 0 ? "#A32D2D" : "#777" }}>
+                {280 - tweet.length} remaining
+              </span>
               <div style={{ flex: 1 }} />
-              <button onClick={() => { navigator.clipboard.writeText(tweet); setCopyLabel("Copied!"); setTimeout(() => setCopyLabel("Copy text"), 2000); }}
-                style={{ background: "transparent", border: "0.5px solid #e5e7eb", color: "#666", borderRadius: 6, padding: "6px 12px", fontSize: 11, cursor: "pointer", ...mono }}>
-                {copyLabel}
-              </button>
-              <button onClick={() => setShowBskyForm(!showBskyForm)} disabled={tweet.length > 280}
-                style={{ background: tweet.length > 280 ? "#e5e7eb" : "#111", border: "none", color: tweet.length > 280 ? "#999" : "#fff", borderRadius: 6, padding: "6px 12px", fontSize: 11, cursor: tweet.length > 280 ? "not-allowed" : "pointer", ...mono, fontWeight: 500 }}>
-                Post to BlueSky
-              </button>
+              <button
+                onClick={() => { navigator.clipboard.writeText(tweet); setCopyLabel("Copied!"); setTimeout(() => setCopyLabel("Copy text"), 2000); }}
+                aria-label="Copy post text to clipboard"
+                style={{ ...btnBase, background: "transparent", border: "0.5px solid #e5e7eb", color: "#555", padding: "10px 16px", fontSize: 13 }}
+              >{copyLabel}</button>
+              <button
+                onClick={() => setShowBsky(!showBsky)}
+                disabled={tweet.length > 280}
+                aria-disabled={tweet.length > 280}
+                aria-expanded={showBsky}
+                style={{ ...btnBase, background: tweet.length > 280 ? "#e5e7eb" : "#111", color: tweet.length > 280 ? "#999" : "#fff", padding: "10px 16px", fontSize: 13 }}
+              >Post to BlueSky</button>
             </div>
-            {showBskyForm && (
-              <div style={{ marginTop: 12, background: "#f9fafb", border: "0.5px solid #e5e7eb", borderRadius: 8, padding: 12, display: "flex", flexDirection: "column", gap: 8 }}>
-                <div style={{ fontSize: 11, color: "#999", lineHeight: 1.6 }}>Credentials used only for this post, never stored. Generate an App Password in BlueSky → Settings → App Passwords.</div>
-                <input value={bskyHandle} onChange={(e) => setBskyHandle(e.target.value)} placeholder="handle.bsky.social" style={inputBase} />
-                <input type="password" value={bskyAppPassword} onChange={(e) => setBskyAppPassword(e.target.value)} placeholder="App password (xxxx-xxxx-xxxx-xxxx)" style={inputBase} />
-                <button onClick={postToBluesky} disabled={posting || !bskyHandle || !bskyAppPassword}
-                  style={{ background: posting || !bskyHandle || !bskyAppPassword ? "#e5e7eb" : "#111", border: "none", color: posting || !bskyHandle || !bskyAppPassword ? "#999" : "#fff", borderRadius: 8, padding: 10, fontSize: 12, cursor: posting || !bskyHandle || !bskyAppPassword ? "not-allowed" : "pointer", ...mono, fontWeight: 500 }}>
-                  {posting ? "Posting..." : "Confirm post to BlueSky"}
-                </button>
+
+            {showBsky && (
+              <div style={{ marginTop: 12, background: "#f9fafb", border: "0.5px solid #e5e7eb", borderRadius: 8, padding: 14, display: "flex", flexDirection: "column", gap: 10 }}>
+                <p style={{ fontSize: 12, color: "#777", lineHeight: 1.6, margin: 0 }}>Credentials used only for this post, never stored. Generate an App Password in BlueSky → Settings → App Passwords.</p>
+                <label htmlFor="bsky-handle" style={{ position: "absolute", width: 1, height: 1, overflow: "hidden" }}>BlueSky handle</label>
+                <input id="bsky-handle" value={bskyHandle} onChange={(e) => setBskyHandle(e.target.value)} placeholder="handle.bsky.social" autoComplete="username" style={inputBase} />
+                <label htmlFor="bsky-pwd" style={{ position: "absolute", width: 1, height: 1, overflow: "hidden" }}>BlueSky app password</label>
+                <input id="bsky-pwd" type="password" value={bskyAppPwd} onChange={(e) => setBskyAppPwd(e.target.value)} placeholder="App password (xxxx-xxxx-xxxx-xxxx)" autoComplete="current-password" style={inputBase} />
+                <button
+                  onClick={postToBluesky}
+                  disabled={posting || !bskyHandle || !bskyAppPwd}
+                  aria-disabled={posting || !bskyHandle || !bskyAppPwd}
+                  style={{ ...btnBase, width: "100%", background: posting || !bskyHandle || !bskyAppPwd ? "#e5e7eb" : "#111", color: posting || !bskyHandle || !bskyAppPwd ? "#999" : "#fff" }}
+                >{posting ? "Posting…" : "Confirm post to BlueSky"}</button>
                 {postResult && (
-                  <div style={{ borderRadius: 8, padding: "8px 12px", background: postResult.success ? "#EAF3DE" : "#FCEBEB", border: "0.5px solid " + (postResult.success ? "#639922" : "#F09595"), color: postResult.success ? "#3B6D11" : "#791F1F", fontSize: 11 }}>
+                  <div role="alert" style={{ borderRadius: 8, padding: "10px 14px", background: postResult.success ? "#EAF3DE" : "#FCEBEB", border: "0.5px solid " + (postResult.success ? "#639922" : "#F09595"), color: postResult.success ? "#3B6D11" : "#791F1F", fontSize: 13 }}>
                     {postResult.success ? "Posted successfully to BlueSky." : postResult.error}
                   </div>
                 )}
@@ -503,7 +644,7 @@ export default function BirdDogExpress() {
           </Panel>
 
           {!wide && (
-            <button onClick={reset} style={{ background: "transparent", border: "0.5px solid #e5e7eb", color: "#999", borderRadius: 8, padding: "8px 18px", fontSize: 11, cursor: "pointer", ...mono, alignSelf: "flex-start" }}>
+            <button onClick={reset} style={{ ...btnBase, background: "transparent", border: "0.5px solid #e5e7eb", color: "#777", alignSelf: "flex-start" }}>
               ← New rumor
             </button>
           )}
@@ -514,139 +655,94 @@ export default function BirdDogExpress() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#f3f4f6", color: "#111", fontFamily: "ui-sans-serif, system-ui, sans-serif" }}>
+      <style>{FOCUS_STYLE}</style>
+
+      {/* Skip link */}
+      <a href="#main-content" style={{ position: "absolute", top: -40, left: 0, background: "#111", color: "#fff", padding: "8px 16px", borderRadius: 4, fontSize: 13, zIndex: 100, textDecoration: "none" }}
+        onFocus={(e) => (e.target.style.top = "8px")} onBlur={(e) => (e.target.style.top = "-40px")}>
+        Skip to main content
+      </a>
 
       {/* Header */}
-      <div style={{ background: "#fff", borderBottom: "0.5px solid #e5e7eb", padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+      <header style={{ background: "#fff", borderBottom: "0.5px solid #e5e7eb", padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
         <div>
-          <div style={{ fontSize: 16, fontWeight: 500, ...mono, letterSpacing: "0.1em", color: "#111" }}>BIRDDOG EXPRESS</div>
-          <div style={{ fontSize: 10, ...mono, letterSpacing: "0.16em", color: "#999", textTransform: "uppercase", marginTop: 1 }}>AI-powered rumor validation</div>
+          <div style={{ fontSize: 16, fontWeight: 500, ...mono, letterSpacing: "0.1em", color: "#111" }} aria-label="BirdDog Express">BIRDDOG EXPRESS</div>
+          <div style={{ fontSize: 11, ...mono, letterSpacing: "0.14em", color: "#888", textTransform: "uppercase", marginTop: 1 }} aria-hidden="true">AI-powered rumor validation</div>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          {["tracker", "history"].map((tab) => (
-            <button key={tab} onClick={() => setActiveTab(tab)} style={{
-              ...mono, fontSize: 11, padding: "5px 12px", borderRadius: 6,
-              border: "0.5px solid", borderColor: activeTab === tab ? "#d1d5db" : "#e5e7eb",
-              background: activeTab === tab ? "#f3f4f6" : "transparent",
-              color: activeTab === tab ? "#111" : "#999", cursor: "pointer",
-              textTransform: "capitalize", letterSpacing: "0.08em",
-            }}>
-              {tab === "history" ? `History (${history.length})` : "Tracker"}
-            </button>
-          ))}
-        </div>
-      </div>
+        <nav aria-label="Main navigation">
+          <div style={{ display: "flex", gap: 8 }} role="tablist">
+            {["tracker","history"].map(tab => (
+              <button
+                key={tab}
+                role="tab"
+                aria-selected={activeTab === tab}
+                onClick={() => setActiveTab(tab)}
+                style={{ ...mono, fontSize: 12, padding: "6px 14px", borderRadius: 6, border: "0.5px solid", borderColor: activeTab === tab ? "#d1d5db" : "#e5e7eb", background: activeTab === tab ? "#f3f4f6" : "transparent", color: activeTab === tab ? "#111" : "#888", cursor: "pointer", textTransform: "capitalize", letterSpacing: "0.08em", minHeight: 44 }}
+              >
+                {tab === "history" ? `History (${history.length})` : "Tracker"}
+              </button>
+            ))}
+          </div>
+        </nav>
+      </header>
 
-      {/* HISTORY TAB */}
-      {activeTab === "history" && (
-        <div style={{ maxWidth: 720, margin: "0 auto", padding: "24px 20px" }}>
-          <div style={{ fontSize: 10, ...mono, color: "#999", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 14 }}>Recent validations</div>
-          {history.length === 0
-            ? <Panel><div style={{ textAlign: "center", color: "#ccc", padding: "40px 0", fontSize: 13 }}>No rumors validated yet.</div></Panel>
-            : <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {history.map((h) => {
-                  const hc = VERDICT_CONFIG[h.verdict] || VERDICT_CONFIG.UNVERIFIED;
-                  const hcl = h.classification ? (CLASSIFICATION_CONFIG[h.classification] || null) : null;
-                  return (
-                    <Panel key={h.id}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: 13, color: "#111", marginBottom: 3 }}>{h.rumor}</div>
-                          <div style={{ fontSize: 10, ...mono, color: "#999" }}>{h.timestamp}</div>
-                        </div>
-                        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
-                          <Badge {...hc} />
-                          {hcl && <Badge {...hcl} />}
-                          <div style={{ fontSize: 10, ...mono, color: "#999", display: "flex", gap: 8 }}>
-                            <span>Cred: <b style={{ color: hc.color }}>{h.credibility}</b></span>
-                            <span>Fit: <b style={{ color: hc.color }}>{h.fit}</b></span>
-                            <span>Overall: <b style={{ color: hc.color }}>{h.overall}</b></span>
+      <main id="main-content">
+        {/* HISTORY TAB */}
+        {activeTab === "history" && (
+          <div style={{ maxWidth: 720, margin: "0 auto", padding: "24px 16px" }}>
+            <h2 style={{ fontSize: 11, ...mono, color: "#888", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 14, fontWeight: 500 }}>Recent validations</h2>
+            {history.length === 0
+              ? <Panel><p style={{ textAlign: "center", color: "#bbb", padding: "40px 0", fontSize: 14, margin: 0 }}>No rumors validated yet.</p></Panel>
+              : <div style={{ display: "flex", flexDirection: "column", gap: 8 }} role="list">
+                  {history.map(h => {
+                    const hc  = VERDICT_CONFIG[h.verdict] || VERDICT_CONFIG.UNVERIFIED;
+                    const hcl = h.classification ? (CLASSIFICATION_CONFIG[h.classification] || null) : null;
+                    return (
+                      <Panel key={h.id} role="listitem">
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+                          <div style={{ flex: 1 }}>
+                            <p style={{ fontSize: 13, color: "#111", marginBottom: 4, margin: "0 0 4px" }}>{h.rumor}</p>
+                            <time style={{ fontSize: 11, ...mono, color: "#999" }}>{h.timestamp}</time>
+                          </div>
+                          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 5 }}>
+                            <Badge {...hc} />
+                            {hcl && <Badge {...hcl} />}
+                            <dl style={{ fontSize: 11, ...mono, color: "#888", display: "flex", gap: 10, margin: 0 }}>
+                              <div><dt style={{ display: "inline" }}>Cred: </dt><dd style={{ display: "inline", color: hc.color, fontWeight: 500 }}>{h.credibility}</dd></div>
+                              <div><dt style={{ display: "inline" }}>Fit: </dt><dd style={{ display: "inline", color: hc.color, fontWeight: 500 }}>{h.fit}</dd></div>
+                              <div><dt style={{ display: "inline" }}>Overall: </dt><dd style={{ display: "inline", color: hc.color, fontWeight: 500 }}>{h.overall}</dd></div>
+                            </dl>
                           </div>
                         </div>
-                      </div>
-                    </Panel>
-                  );
-                })}
-              </div>
-          }
-        </div>
-      )}
-
-      {/* TRACKER TAB */}
-      {activeTab === "tracker" && (
-        wide ? (
-          // ── WIDE: 30/70 split ─────────────────────────────────────────────
-          <div style={{ display: "grid", gridTemplateColumns: "30% 70%", minHeight: "calc(100vh - 57px)" }}>
-            <div style={{ background: "#fff", borderRight: "0.5px solid #e5e7eb", padding: "24px 20px", display: "flex", flexDirection: "column", gap: 16 }}>
-              <div>
-                <div style={{ fontSize: 16, fontWeight: 500, color: "#111", marginBottom: 5 }}>Validate a rumor</div>
-                <div style={{ fontSize: 12, color: "#999", lineHeight: 1.65 }}>Paste any MLB trade or signing rumor. BirdDog checks it across national reporters, beat writers, and team markets.</div>
-              </div>
-              <textarea
-                value={rumor}
-                onChange={(e) => setRumor(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && rumor.trim()) validate(); }}
-                placeholder="e.g. The Mets are in discussions with the Cubs about Cody Bellinger..."
-                rows={8}
-                style={{ ...inputBase, resize: "vertical", lineHeight: 1.7, flex: 1 }}
-                onFocus={(e) => (e.target.style.borderColor = "#9ca3af")}
-                onBlur={(e) => (e.target.style.borderColor = "#e5e7eb")}
-              />
-              <button
-                onClick={step === "result" ? reset : validate}
-                disabled={step === "validating" || (!rumor.trim() && step !== "result")}
-                style={{
-                  background: step === "validating" ? "#e5e7eb" : "#111",
-                  color: step === "validating" ? "#999" : "#fff",
-                  border: "none", borderRadius: 8, padding: "11px",
-                  fontSize: 13, fontWeight: 500, cursor: step === "validating" ? "not-allowed" : "pointer",
-                  ...mono, letterSpacing: "0.06em", width: "100%",
-                }}
-              >
-                {step === "validating" ? "Validating..." : step === "result" ? "← New rumor" : "Validate →"}
-              </button>
-            </div>
-            <div style={{ padding: "24px 20px", overflowY: "auto" }}>
-              {rightContent}
-            </div>
-          </div>
-        ) : (
-          // ── NARROW: stacked ───────────────────────────────────────────────
-          <div style={{ maxWidth: 600, margin: "0 auto", padding: "20px 16px", display: "flex", flexDirection: "column", gap: 12 }}>
-            {(step === "input" || step === "validating" || step === "error") && (
-              <Panel>
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  <div>
-                    <div style={{ fontSize: 16, fontWeight: 500, color: "#111", marginBottom: 4 }}>Validate a rumor</div>
-                    <div style={{ fontSize: 12, color: "#999", lineHeight: 1.6 }}>Paste any MLB trade or signing rumor. BirdDog checks it across national reporters, beat writers, and team markets.</div>
-                  </div>
-                  <textarea
-                    value={rumor}
-                    onChange={(e) => setRumor(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && rumor.trim()) validate(); }}
-                    placeholder="e.g. The Mets are in discussions with the Cubs about Cody Bellinger..."
-                    rows={3}
-                    style={{ ...inputBase, resize: "vertical", lineHeight: 1.7 }}
-                    onFocus={(e) => (e.target.style.borderColor = "#9ca3af")}
-                    onBlur={(e) => (e.target.style.borderColor = "#e5e7eb")}
-                  />
-                  <button
-                    onClick={validate}
-                    disabled={!rumor.trim() || step === "validating"}
-                    style={{
-                      background: !rumor.trim() || step === "validating" ? "#e5e7eb" : "#111",
-                      color: !rumor.trim() || step === "validating" ? "#999" : "#fff",
-                      border: "none", borderRadius: 8, padding: "11px 20px",
-                      fontSize: 13, fontWeight: 500, cursor: !rumor.trim() || step === "validating" ? "not-allowed" : "pointer",
-                      ...mono, alignSelf: "flex-end", letterSpacing: "0.06em",
-                    }}
-                  >{step === "validating" ? "Validating..." : "Validate →"}</button>
+                      </Panel>
+                    );
+                  })}
                 </div>
-              </Panel>
-            )}
-            {rightContent}
+            }
           </div>
-        )
-      )}
+        )}
+
+        {/* TRACKER TAB */}
+        {activeTab === "tracker" && (
+          wide ? (
+            <div style={{ display: "grid", gridTemplateColumns: "300px 1fr", minHeight: "calc(100vh - 57px)" }}>
+              <div style={{ background: "#fff", borderRight: "0.5px solid #e5e7eb", padding: "24px 20px" }}>
+                {InputPanel}
+              </div>
+              <div style={{ padding: "24px 20px", overflowY: "auto" }}>
+                {ResultsPanel}
+              </div>
+            </div>
+          ) : (
+            <div style={{ maxWidth: 600, margin: "0 auto", padding: "20px 16px", display: "flex", flexDirection: "column", gap: 14 }}>
+              {(step === "input" || step === "validating" || step === "error") && (
+                <Panel>{InputPanel}</Panel>
+              )}
+              {ResultsPanel}
+            </div>
+          )
+        )}
+      </main>
     </div>
   );
 }
