@@ -320,16 +320,13 @@ export default function BirdDogExpress() {
           placeholder="e.g. The Mets are in discussions with the Cubs about Cody Bellinger..."
           rows={4}
           maxLength={CHAR_LIMIT + 20}
-          aria-describedby="char-count rumor-hint"
+          aria-describedby="char-count"
           aria-required="true"
           style={{ ...inputBase, resize: "vertical", lineHeight: 1.7, fontSize: 14 }}
         />
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginTop: 5, gap: 8 }}>
-          <span id="rumor-hint" style={{ fontSize: 11, color: "#bbb", ...mono, lineHeight: 1.6 }}>
-            {wide ? "Cmd+Enter to submit · " : ""}Passan · Rosenthal · Olney · Feinsand · Sammon · Nightengale · Morosi · Beat writers · All 30 markets
-          </span>
-          <span id="char-count" aria-live="polite" style={{ fontSize: 11, ...mono, color: charColor, flexShrink: 0 }}>
-            {remaining < 0 ? `${Math.abs(remaining)} over` : `${remaining} left`}
+        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 5 }}>
+          <span id="char-count" aria-live="polite" style={{ fontSize: 11, ...mono, color: charColor }}>
+            {remaining < 0 ? `${Math.abs(remaining)} over limit` : `${remaining} left`}
           </span>
         </div>
       </div>
