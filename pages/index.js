@@ -317,7 +317,7 @@ export default function BirdDogExpress() {
           value={rumor}
           onChange={(e) => setRumor(e.target.value)}
           onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && canSubmit) validate(); }}
-          placeholder="e.g. The Mets are in talks with the Cubs about Cody Bellinger..."
+          placeholder="e.g. Mets in talks with Cubs about Bellinger..."
           rows={4}
           maxLength={CHAR_LIMIT + 20}
           aria-describedby="char-count"
