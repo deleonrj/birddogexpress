@@ -1,5 +1,6 @@
 // pages/index.js
 import { useState, useCallback, useEffect, useRef } from "react";
+import { Analytics } from "@vercel/analytics/react";
 
 const VERDICT_CONFIG = {
   CORROBORATED: { label: "Corroborated",         color: "#3B6D11", bg: "#EAF3DE", border: "#639922" },
@@ -750,6 +751,7 @@ export default function BirdDogExpress() {
           )
         )}
       </main>
+      <Analytics />
     </div>
   );
 }
