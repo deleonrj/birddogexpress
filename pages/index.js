@@ -42,13 +42,8 @@ const STEP_TIMINGS  = { received:0, national:2, local:6, crossmarket:10, fit:16,
 const CHAR_LIMIT = 255;
 const mono = { fontFamily: "ui-monospace, 'Courier New', monospace" };
 
-// Focus ring applied globally via injected style tag
 const FOCUS_STYLE = `
-  *:focus-visible {
-    outline: 2px solid #1d4ed8;
-    outline-offset: 2px;
-    border-radius: 4px;
-  }
+  *:focus-visible { outline: 2px solid #1d4ed8; outline-offset: 2px; border-radius: 4px; }
   @keyframes spin { to { transform: rotate(360deg); } }
   @media (prefers-reduced-motion: reduce) {
     * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
@@ -57,11 +52,7 @@ const FOCUS_STYLE = `
 
 function Badge({ label, color, bg, border }) {
   return (
-    <span style={{
-      ...mono, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase",
-      padding: "4px 10px", borderRadius: 5, border: "0.5px solid " + border,
-      background: bg, color, display: "inline-flex", alignItems: "center", whiteSpace: "nowrap",
-    }}>
+    <span style={{ ...mono, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", padding: "4px 10px", borderRadius: 5, border: "0.5px solid " + border, background: bg, color, display: "inline-flex", alignItems: "center", whiteSpace: "nowrap" }}>
       {label}
     </span>
   );
@@ -76,15 +67,10 @@ function Ring({ value, color, label, sublabel, discounted }) {
   return (
     <div style={{ textAlign: "center" }}>
       <div style={{ fontSize: 11, ...mono, letterSpacing: "0.08em", textTransform: "uppercase", color: "#555", marginBottom: 5 }} aria-hidden="true">{label}</div>
-      <div
-        role="img"
-        aria-label={`${label}: ${pct}%${discounted ? " (discounted — fan-driven signal)" : ""}`}
-        style={{ position: "relative", width: 44, height: 44, margin: "0 auto 5px" }}
-      >
+      <div role="img" aria-label={`${label}: ${pct}%${discounted ? " (discounted — fan-driven signal)" : ""}`} style={{ position: "relative", width: 44, height: 44, margin: "0 auto 5px" }}>
         <svg width="44" height="44" viewBox="0 0 44 44" style={{ transform: "rotate(-90deg)" }} aria-hidden="true">
           <circle cx="22" cy="22" r={r} fill="none" stroke="#e5e7eb" strokeWidth="2.5" />
-          <circle cx="22" cy="22" r={r} fill="none" stroke={displayColor} strokeWidth="2.5"
-            strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round" />
+          <circle cx="22" cy="22" r={r} fill="none" stroke={displayColor} strokeWidth="2.5" strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round" />
         </svg>
         <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", ...mono, fontSize: 12, fontWeight: 500, color: displayColor }} aria-hidden="true">{pct}</div>
       </div>
@@ -117,9 +103,7 @@ function SourceRow({ name, context, status, last }) {
         <div style={{ fontSize: 12, ...mono, color: "#111" }}>{name}</div>
         <div style={{ fontSize: 11, color: "#777", marginTop: 1 }}>{context}</div>
       </div>
-      <span style={{ fontSize: 11, ...mono, textTransform: "uppercase", padding: "3px 8px", borderRadius: 4, background: s.bg, color: s.color, minWidth: 44, textAlign: "center" }}>
-        {status}
-      </span>
+      <span style={{ fontSize: 11, ...mono, textTransform: "uppercase", padding: "3px 8px", borderRadius: 4, background: s.bg, color: s.color, minWidth: 44, textAlign: "center" }}>{status}</span>
     </div>
   );
 }
@@ -156,10 +140,7 @@ function ProgressSteps({ rumor, activeStep, elapsed }) {
         const pending = i > activeIdx;
         return (
           <div key={s.key} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "9px 0", borderBottom: i < STEPS.length - 1 ? "0.5px solid #f3f4f6" : "none" }}>
-            <div
-              aria-hidden="true"
-              style={{ width: 22, height: 22, borderRadius: "50%", flexShrink: 0, marginTop: 1, display: "flex", alignItems: "center", justifyContent: "center", background: done ? "#EAF3DE" : "#f3f4f6", border: done ? "none" : "0.5px solid #e5e7eb" }}
-            >
+            <div aria-hidden="true" style={{ width: 22, height: 22, borderRadius: "50%", flexShrink: 0, marginTop: 1, display: "flex", alignItems: "center", justifyContent: "center", background: done ? "#EAF3DE" : "#f3f4f6", border: done ? "none" : "0.5px solid #e5e7eb" }}>
               {done   && <span style={{ fontSize: 11, color: "#3B6D11", fontWeight: 700 }}>✓</span>}
               {active && <div style={{ width: 10, height: 10, border: "1.5px solid #d1d5db", borderTopColor: "#111", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />}
               {pending && <span style={{ width: 4, height: 4, borderRadius: "50%", background: "#d1d5db", display: "block" }} />}
@@ -179,27 +160,20 @@ function ProgressSteps({ rumor, activeStep, elapsed }) {
 }
 
 export default function BirdDogExpress() {
-  const [step, setStep]             = useState("input");
-  const [rumor, setRumor]           = useState("");
-  const [validation, setValidation] = useState(null);
-  const [activeStep, setActiveStep] = useState("received");
-  const [elapsed, setElapsed]       = useState(0);
-  const [tweet, setTweet]           = useState("");
-  const [bskyHandle, setBskyHandle] = useState("");
-  const [bskyAppPwd, setBskyAppPwd] = useState("");
-  const [posting, setPosting]       = useState(false);
-  const [postResult, setPostResult] = useState(null);
-  const [showBsky, setShowBsky]     = useState(false);
-  const [history, setHistory]       = useState([]);
-  const [activeTab, setActiveTab]   = useState("tracker");
-  const [copyLabel, setCopyLabel]   = useState("Copy text");
-  const [errorMsg, setErrorMsg]     = useState(null);
+  const [step, setStep]               = useState("input");
+  const [rumor, setRumor]             = useState("");
+  const [validation, setValidation]   = useState(null);
+  const [activeStep, setActiveStep]   = useState("received");
+  const [elapsed, setElapsed]         = useState(0);
+  const [history, setHistory]         = useState([]);
+  const [activeTab, setActiveTab]     = useState("tracker");
+  const [errorMsg, setErrorMsg]       = useState(null);
   const [teamRecords, setTeamRecords] = useState({});
-  const [wide, setWide]             = useState(false);
-  const timerRef   = useRef(null);
-  const startRef   = useRef(null);
-  const resultRef  = useRef(null);
-  const rumorRef   = useRef(null);
+  const [wide, setWide]               = useState(false);
+  const timerRef  = useRef(null);
+  const startRef  = useRef(null);
+  const resultRef = useRef(null);
+  const rumorRef  = useRef(null);
 
   useEffect(() => {
     const check = () => setWide(window.innerWidth >= 768);
@@ -224,18 +198,14 @@ export default function BirdDogExpress() {
     return () => clearInterval(timerRef.current);
   }, [step]);
 
-  // Move focus to results on mobile when result arrives
   useEffect(() => {
-    if (step === "result" && !wide && resultRef.current) {
-      resultRef.current.focus();
-    }
+    if (step === "result" && !wide && resultRef.current) resultRef.current.focus();
   }, [step, wide]);
 
   const validate = useCallback(async () => {
     if (!rumor.trim() || rumor.length > CHAR_LIMIT) return;
     setStep("validating");
     setValidation(null);
-    setPostResult(null);
     setErrorMsg(null);
     setTeamRecords({});
     setActiveStep("received");
@@ -271,7 +241,6 @@ export default function BirdDogExpress() {
               setActiveStep("scoring");
               setTimeout(() => {
                 setValidation(parsed);
-                setTweet(parsed.tweet || "");
                 if (payload.standings?.records) setTeamRecords(payload.standings.records);
                 setStep("result");
                 setHistory(prev => [{
@@ -297,34 +266,9 @@ export default function BirdDogExpress() {
     }
   }, [rumor]);
 
-  const postToBluesky = useCallback(async () => {
-    if (!bskyHandle || !bskyAppPwd || !tweet) return;
-    setPosting(true); setPostResult(null);
-    try {
-      const sRes = await fetch("https://bsky.social/xrpc/com.atproto.server.createSession", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ identifier: bskyHandle, password: bskyAppPwd }),
-      });
-      const session = await sRes.json();
-      if (!session.accessJwt) throw new Error(session.message || "Auth failed");
-      const pRes = await fetch("https://bsky.social/xrpc/com.atproto.repo.createRecord", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: "Bearer " + session.accessJwt },
-        body: JSON.stringify({ repo: session.did, collection: "app.bsky.feed.post", record: { text: tweet, createdAt: new Date().toISOString(), langs: ["en-US"] } }),
-      });
-      const pd = await pRes.json();
-      if (pd.uri) setPostResult({ success: true });
-      else throw new Error(pd.message || "Post failed");
-    } catch (err) {
-      setPostResult({ success: false, error: err.message });
-    } finally {
-      setPosting(false);
-    }
-  }, [bskyHandle, bskyAppPwd, tweet]);
-
   const reset = () => {
-    setStep("input"); setValidation(null); setTweet("");
-    setPostResult(null); setShowBsky(false); setErrorMsg(null);
+    setStep("input"); setValidation(null);
+    setErrorMsg(null);
     setTimeout(() => rumorRef.current?.focus(), 50);
   };
 
@@ -339,8 +283,7 @@ export default function BirdDogExpress() {
     width: "100%", boxSizing: "border-box",
     background: "#f9fafb", border: "0.5px solid #e5e7eb",
     borderRadius: 8, color: "#111", fontSize: 14,
-    padding: "10px 12px", fontFamily: "inherit", outline: "none",
-    minHeight: 44,
+    padding: "10px 12px", fontFamily: "inherit", outline: "none", minHeight: 44,
   };
 
   const btnBase = {
@@ -364,7 +307,6 @@ export default function BirdDogExpress() {
           Paste any MLB trade or signing rumor. BirdDog checks it across national reporters, beat writers, and both team markets.
         </div>
       </div>
-
       <div>
         <label htmlFor="rumor-input" style={{ display: "block", fontSize: 11, ...mono, color: "#666", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>
           Rumor <span aria-hidden="true">*</span><span style={{ position: "absolute", width: 1, height: 1, overflow: "hidden" }}> (required)</span>
@@ -382,27 +324,22 @@ export default function BirdDogExpress() {
           aria-required="true"
           style={{ ...inputBase, resize: "vertical", lineHeight: 1.7, fontSize: 14 }}
         />
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 5 }}>
-          <span id="rumor-hint" style={{ fontSize: 11, color: "#aaa", ...mono }}>Cmd+Enter to submit · Passan · Rosenthal · Olney · Feinsand · Sammon · Nightengale · Morosi · Beat writers · All 30 markets</span>
-          <span id="char-count" aria-live="polite" style={{ fontSize: 11, ...mono, color: charColor }}>
-            {remaining < 0 ? `${Math.abs(remaining)} over limit` : `${remaining} left`}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginTop: 5, gap: 8 }}>
+          <span id="rumor-hint" style={{ fontSize: 11, color: "#bbb", ...mono, lineHeight: 1.6 }}>
+            {wide ? "Cmd+Enter to submit · " : ""}Passan · Rosenthal · Olney · Feinsand · Sammon · Nightengale · Morosi · Beat writers · All 30 markets
+          </span>
+          <span id="char-count" aria-live="polite" style={{ fontSize: 11, ...mono, color: charColor, flexShrink: 0 }}>
+            {remaining < 0 ? `${Math.abs(remaining)} over` : `${remaining} left`}
           </span>
         </div>
       </div>
-
       <hr style={{ border: "none", borderTop: "0.5px solid #e5e7eb", margin: 0 }} />
-
       <button
         onClick={step === "result" ? reset : validate}
         disabled={!canSubmit && step !== "result"}
         aria-disabled={!canSubmit && step !== "result"}
         aria-label={step === "validating" ? "Validation in progress" : step === "result" ? "Clear results and validate a new rumor" : "Validate this rumor"}
-        style={{
-          ...btnBase,
-          background: (!canSubmit && step !== "result") ? "#e5e7eb" : "#111",
-          color: (!canSubmit && step !== "result") ? "#999" : "#fff",
-          width: "100%",
-        }}
+        style={{ ...btnBase, background: (!canSubmit && step !== "result") ? "#e5e7eb" : "#111", color: (!canSubmit && step !== "result") ? "#999" : "#fff", width: "100%" }}
       >
         {step === "validating" ? "Validating…" : step === "result" ? "← New rumor" : "Validate →"}
       </button>
@@ -410,13 +347,7 @@ export default function BirdDogExpress() {
   );
 
   const ResultsPanel = (
-    <div
-      ref={resultRef}
-      tabIndex={-1}
-      aria-live="polite"
-      aria-label="Validation results"
-      style={{ display: "flex", flexDirection: "column", gap: 12, outline: "none" }}
-    >
+    <div ref={resultRef} tabIndex={-1} aria-live="polite" aria-label="Validation results" style={{ display: "flex", flexDirection: "column", gap: 12, outline: "none" }}>
       {step === "input" && (
         <div style={{ textAlign: "center", padding: "60px 20px", color: "#ccc" }}>
           <div style={{ fontSize: 32, marginBottom: 12 }} aria-hidden="true">⚾</div>
@@ -435,7 +366,6 @@ export default function BirdDogExpress() {
 
       {step === "result" && validation && cfg && (
         <>
-          {/* Hero */}
           <Panel style={{ background: "#f9fafb" }}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 12, alignItems: "start" }}>
               <div>
@@ -458,7 +388,6 @@ export default function BirdDogExpress() {
             </div>
           </Panel>
 
-          {/* Fan-driven banner */}
           {validation.rumor_classification === "FAN_DRIVEN" && (
             <Panel style={{ background: "#FAEEDA", border: "0.5px solid #EF9F27" }} role="note">
               <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
@@ -470,7 +399,6 @@ export default function BirdDogExpress() {
             </Panel>
           )}
 
-          {/* Rings */}
           <Panel>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>
               <Ring value={validation.credibility_score} color={cfg.color} label="Credibility" sublabel="Source weight" />
@@ -479,13 +407,11 @@ export default function BirdDogExpress() {
             </div>
           </Panel>
 
-          {/* Summary */}
           <Panel>
             <SectionHeading>Analysis summary</SectionHeading>
             <p style={{ fontSize: 13, lineHeight: 1.75, color: "#444", margin: 0 }}>{validation.summary}</p>
           </Panel>
 
-          {/* Sources + Cross-market — stack on mobile */}
           <div style={{ display: "grid", gridTemplateColumns: wide ? "1fr 1fr" : "1fr", gap: 12 }}>
             <Panel>
               <SectionHeading>Sources checked</SectionHeading>
@@ -533,7 +459,6 @@ export default function BirdDogExpress() {
             </Panel>
           </div>
 
-          {/* Live standings */}
           {Object.keys(teamRecords).length > 0 && (() => {
             const allText = [validation.summary, validation.origin_market, validation.destination_market].join(" ").toLowerCase();
             const found   = MLB_TEAMS.filter(t => allText.includes(t)).map(t => teamRecords[t]).filter(Boolean).filter((v,i,a) => a.findIndex(x => x.fullName === v.fullName) === i);
@@ -553,7 +478,6 @@ export default function BirdDogExpress() {
             );
           })()}
 
-          {/* Fit analysis */}
           {validation.fit_analysis && (
             <Panel>
               <SectionHeading>Fit analysis</SectionHeading>
@@ -582,65 +506,11 @@ export default function BirdDogExpress() {
             </Panel>
           )}
 
-          {/* Reasoning */}
           <Panel>
             <SectionHeading>Reasoning</SectionHeading>
             <p style={{ fontSize: 13, lineHeight: 1.75, color: "#444", margin: 0 }}>{validation.reasoning}</p>
             {validation.qc_footer && (
               <p style={{ fontSize: 11, color: "#bbb", ...mono, marginTop: 10, paddingTop: 8, borderTop: "0.5px solid #f3f4f6", margin: "10px 0 0" }}>{validation.qc_footer}</p>
-            )}
-          </Panel>
-
-          {/* Post editor */}
-          <Panel>
-            <SectionHeading>Post text</SectionHeading>
-            <label htmlFor="tweet-input" style={{ position: "absolute", width: 1, height: 1, overflow: "hidden" }}>Post text for BlueSky</label>
-            <textarea
-              id="tweet-input"
-              value={tweet}
-              onChange={(e) => setTweet(e.target.value)}
-              rows={3}
-              aria-describedby="tweet-count"
-              style={{ ...inputBase, resize: "vertical", lineHeight: 1.6, marginBottom: 8 }}
-            />
-            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-              <span id="tweet-count" aria-live="polite" style={{ fontSize: 11, ...mono, color: (280 - tweet.length) < 0 ? "#A32D2D" : "#777" }}>
-                {280 - tweet.length} remaining
-              </span>
-              <div style={{ flex: 1 }} />
-              <button
-                onClick={() => { navigator.clipboard.writeText(tweet); setCopyLabel("Copied!"); setTimeout(() => setCopyLabel("Copy text"), 2000); }}
-                aria-label="Copy post text to clipboard"
-                style={{ ...btnBase, background: "transparent", border: "0.5px solid #e5e7eb", color: "#555", padding: "10px 16px", fontSize: 13 }}
-              >{copyLabel}</button>
-              <button
-                onClick={() => setShowBsky(!showBsky)}
-                disabled={tweet.length > 280}
-                aria-disabled={tweet.length > 280}
-                aria-expanded={showBsky}
-                style={{ ...btnBase, background: tweet.length > 280 ? "#e5e7eb" : "#111", color: tweet.length > 280 ? "#999" : "#fff", padding: "10px 16px", fontSize: 13 }}
-              >Post to BlueSky</button>
-            </div>
-
-            {showBsky && (
-              <div style={{ marginTop: 12, background: "#f9fafb", border: "0.5px solid #e5e7eb", borderRadius: 8, padding: 14, display: "flex", flexDirection: "column", gap: 10 }}>
-                <p style={{ fontSize: 12, color: "#777", lineHeight: 1.6, margin: 0 }}>Credentials used only for this post, never stored. Generate an App Password in BlueSky → Settings → App Passwords.</p>
-                <label htmlFor="bsky-handle" style={{ position: "absolute", width: 1, height: 1, overflow: "hidden" }}>BlueSky handle</label>
-                <input id="bsky-handle" value={bskyHandle} onChange={(e) => setBskyHandle(e.target.value)} placeholder="handle.bsky.social" autoComplete="username" style={inputBase} />
-                <label htmlFor="bsky-pwd" style={{ position: "absolute", width: 1, height: 1, overflow: "hidden" }}>BlueSky app password</label>
-                <input id="bsky-pwd" type="password" value={bskyAppPwd} onChange={(e) => setBskyAppPwd(e.target.value)} placeholder="App password (xxxx-xxxx-xxxx-xxxx)" autoComplete="current-password" style={inputBase} />
-                <button
-                  onClick={postToBluesky}
-                  disabled={posting || !bskyHandle || !bskyAppPwd}
-                  aria-disabled={posting || !bskyHandle || !bskyAppPwd}
-                  style={{ ...btnBase, width: "100%", background: posting || !bskyHandle || !bskyAppPwd ? "#e5e7eb" : "#111", color: posting || !bskyHandle || !bskyAppPwd ? "#999" : "#fff" }}
-                >{posting ? "Posting…" : "Confirm post to BlueSky"}</button>
-                {postResult && (
-                  <div role="alert" style={{ borderRadius: 8, padding: "10px 14px", background: postResult.success ? "#EAF3DE" : "#FCEBEB", border: "0.5px solid " + (postResult.success ? "#639922" : "#F09595"), color: postResult.success ? "#3B6D11" : "#791F1F", fontSize: 13 }}>
-                    {postResult.success ? "Posted successfully to BlueSky." : postResult.error}
-                  </div>
-                )}
-              </div>
             )}
           </Panel>
 
@@ -657,21 +527,14 @@ export default function BirdDogExpress() {
   return (
     <div style={{ minHeight: "100vh", background: "#f3f4f6", color: "#111", fontFamily: "ui-sans-serif, system-ui, sans-serif" }}>
       <style>{FOCUS_STYLE}</style>
-
-      {/* Skip link */}
       <a href="#main-content" style={{ position: "absolute", top: -40, left: 0, background: "#111", color: "#fff", padding: "8px 16px", borderRadius: 4, fontSize: 13, zIndex: 100, textDecoration: "none" }}
         onFocus={(e) => (e.target.style.top = "8px")} onBlur={(e) => (e.target.style.top = "-40px")}>
         Skip to main content
       </a>
 
-      {/* Header */}
       <header style={{ background: "#1B5E30", padding: "12px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <img
-            src="/birddoglogo.png"
-            alt="BirdDog Express shield logo"
-            style={{ width: 44, height: 44, objectFit: "contain", borderRadius: 4, flexShrink: 0 }}
-          />
+          <img src="/birddoglogo.png" alt="BirdDog Express shield logo" style={{ width: 44, height: 44, objectFit: "contain", borderRadius: 4, flexShrink: 0 }} />
           <div>
             <div style={{ fontSize: 16, fontWeight: 500, ...mono, letterSpacing: "0.12em", color: "#F5F0E8" }} aria-label="BirdDog Express">BIRDDOG EXPRESS</div>
             <div style={{ fontSize: 10, ...mono, letterSpacing: "0.18em", color: "#B8960C", textTransform: "uppercase", marginTop: 2 }} aria-hidden="true">AI-powered rumor validation</div>
@@ -680,13 +543,8 @@ export default function BirdDogExpress() {
         <nav aria-label="Main navigation">
           <div style={{ display: "flex", gap: 8 }} role="tablist">
             {["tracker","history"].map(tab => (
-              <button
-                key={tab}
-                role="tab"
-                aria-selected={activeTab === tab}
-                onClick={() => setActiveTab(tab)}
-                style={{ ...mono, fontSize: 12, padding: "6px 14px", borderRadius: 6, border: "0.5px solid", borderColor: activeTab === tab ? "#B8960C" : "rgba(245,240,232,0.25)", background: activeTab === tab ? "#B8960C" : "transparent", color: activeTab === tab ? "#1B1200" : "#F5F0E8", cursor: "pointer", textTransform: "capitalize", letterSpacing: "0.08em", minHeight: 44, fontWeight: activeTab === tab ? 500 : 400 }}
-              >
+              <button key={tab} role="tab" aria-selected={activeTab === tab} onClick={() => setActiveTab(tab)}
+                style={{ ...mono, fontSize: 12, padding: "6px 14px", borderRadius: 6, border: "0.5px solid", borderColor: activeTab === tab ? "#B8960C" : "rgba(245,240,232,0.25)", background: activeTab === tab ? "#B8960C" : "transparent", color: activeTab === tab ? "#1B1200" : "#F5F0E8", cursor: "pointer", textTransform: "capitalize", letterSpacing: "0.08em", minHeight: 44, fontWeight: activeTab === tab ? 500 : 400 }}>
                 {tab === "history" ? `History (${history.length})` : "Tracker"}
               </button>
             ))}
@@ -695,7 +553,6 @@ export default function BirdDogExpress() {
       </header>
 
       <main id="main-content">
-        {/* HISTORY TAB */}
         {activeTab === "history" && (
           <div style={{ maxWidth: 720, margin: "0 auto", padding: "24px 16px" }}>
             <h2 style={{ fontSize: 11, ...mono, color: "#888", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 14, fontWeight: 500 }}>Recent validations</h2>
@@ -709,7 +566,7 @@ export default function BirdDogExpress() {
                       <Panel key={h.id} role="listitem">
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
                           <div style={{ flex: 1 }}>
-                            <p style={{ fontSize: 13, color: "#111", marginBottom: 4, margin: "0 0 4px" }}>{h.rumor}</p>
+                            <p style={{ fontSize: 13, color: "#111", margin: "0 0 4px" }}>{h.rumor}</p>
                             <time style={{ fontSize: 11, ...mono, color: "#999" }}>{h.timestamp}</time>
                           </div>
                           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 5 }}>
@@ -730,7 +587,6 @@ export default function BirdDogExpress() {
           </div>
         )}
 
-        {/* TRACKER TAB */}
         {activeTab === "tracker" && (
           wide ? (
             <div style={{ display: "grid", gridTemplateColumns: "300px 1fr", minHeight: "calc(100vh - 57px)" }}>
