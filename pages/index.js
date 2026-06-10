@@ -31,10 +31,10 @@ const MLB_TEAMS = [
 const STEPS = [
   { key: "received",    label: "Rumor received",               detail: (r) => r.length > 60 ? r.substring(0, 60) + "…" : r },
   { key: "national",    label: "Searching national reporters",  detail: () => "Passan · Rosenthal · Olney · Feinsand · Sammon · Nightengale · Morosi" },
-  { key: "local",       label: "Checking local beat coverage",  detail: () => "Origin beat · Destination beat · Regional outlets" },
-  { key: "crossmarket", label: "Cross-referencing markets",     detail: () => "Comparing origin · destination · national signal" },
-  { key: "fit",         label: "Analyzing team fit",            detail: () => "Roster · Financial · Strategic · GM profile" },
-  { key: "scoring",     label: "Scoring and classification",    detail: () => "Credibility · Fit · Sentiment · Overall likelihood" },
+  { key: "local",       label: "Checking local beat coverage",  detail: () => "Selling market · Buying market · Regional outlets" },
+  { key: "crossmarket", label: "Cross-referencing markets",     detail: () => "Comparing selling market · buying market · national intel" },
+  { key: "fit",         label: "Analyzing player fit",          detail: () => "Roster · Financial · Strategic · GM profile" },
+  { key: "scoring",     label: "Calling the verdict",           detail: () => "Reporter cred · Player fit · Fan heat · BirdDog Score" },
 ];
 const STEP_SEQUENCE = ["received","national","local","crossmarket","fit","scoring"];
 const STEP_TIMINGS  = { received:0, national:2, local:6, crossmarket:10, fit:16, scoring:22 };
@@ -67,14 +67,14 @@ function Ring({ value, color, label, sublabel, discounted }) {
   return (
     <div style={{ textAlign: "center" }}>
       <div style={{ fontSize: 11, ...mono, letterSpacing: "0.08em", textTransform: "uppercase", color: "#555", marginBottom: 5 }} aria-hidden="true">{label}</div>
-      <div role="img" aria-label={`${label}: ${pct}%${discounted ? " (discounted — fan-driven signal)" : ""}`} style={{ position: "relative", width: 44, height: 44, margin: "0 auto 5px" }}>
+      <div role="img" aria-label={`${label}: ${pct}%${discounted ? " (fan buzz only — not a credibility signal)" : ""}`} style={{ position: "relative", width: 44, height: 44, margin: "0 auto 5px" }}>
         <svg width="44" height="44" viewBox="0 0 44 44" style={{ transform: "rotate(-90deg)" }} aria-hidden="true">
           <circle cx="22" cy="22" r={r} fill="none" stroke="#e5e7eb" strokeWidth="2.5" />
           <circle cx="22" cy="22" r={r} fill="none" stroke={displayColor} strokeWidth="2.5" strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round" />
         </svg>
         <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", ...mono, fontSize: 12, fontWeight: 500, color: displayColor }} aria-hidden="true">{pct}</div>
       </div>
-      <div style={{ fontSize: 11, color: "#666", ...mono }}>{sublabel}{discounted ? " (discounted)" : ""}</div>
+      <div style={{ fontSize: 11, color: "#666", ...mono }}>{sublabel}{discounted ? " (not counted)" : ""}</div>
     </div>
   );
 }
@@ -130,8 +130,8 @@ function ProgressSteps({ rumor, activeStep, elapsed }) {
   const activeIdx = STEP_SEQUENCE.indexOf(activeStep);
   return (
     <Panel>
-      <SectionHeading>Validating rumor</SectionHeading>
-      <div role="status" aria-live="polite" aria-label={`Validation step: ${STEPS[activeIdx]?.label || "processing"}`} style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0,0,0,0)" }}>
+      <SectionHeading>Checking the hot stove...</SectionHeading>
+      <div role="status" aria-live="polite" aria-label={`Step: ${STEPS[activeIdx]?.label || "processing"}`} style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0,0,0,0)" }}>
         {STEPS[activeIdx]?.label}
       </div>
       {STEPS.map((s, i) => {
@@ -153,7 +153,7 @@ function ProgressSteps({ rumor, activeStep, elapsed }) {
         );
       })}
       <div aria-live="off" style={{ fontSize: 11, ...mono, color: "#bbb", textAlign: "center", marginTop: 12, letterSpacing: "0.06em" }}>
-        Scanning · {elapsed}s elapsed
+        Working the phones · {elapsed}s
       </div>
     </Panel>
   );
@@ -317,7 +317,7 @@ export default function BirdDogExpress() {
           value={rumor}
           onChange={(e) => setRumor(e.target.value)}
           onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && canSubmit) validate(); }}
-          placeholder="e.g. The Mets are in discussions with the Cubs about Cody Bellinger..."
+          placeholder="e.g. The Mets are in talks with the Cubs about Cody Bellinger..."
           rows={4}
           maxLength={CHAR_LIMIT + 20}
           aria-describedby="char-count"
@@ -348,7 +348,7 @@ export default function BirdDogExpress() {
       {step === "input" && (
         <div style={{ textAlign: "center", padding: "60px 20px", color: "#ccc" }}>
           <div style={{ fontSize: 32, marginBottom: 12 }} aria-hidden="true">⚾</div>
-          <div style={{ fontSize: 13, ...mono }}>Results will appear here</div>
+          <div style={{ fontSize: 13, ...mono }}>Nothing in the binder yet.</div>
         </div>
       )}
 
@@ -369,14 +369,14 @@ export default function BirdDogExpress() {
                 <p style={{ fontSize: 14, fontWeight: 500, color: "#111", lineHeight: 1.5, margin: "0 0 4px" }}>
                   {rumor.length > 100 ? rumor.substring(0, 100) + "…" : rumor}
                 </p>
-                <div style={{ fontSize: 11, ...mono, color: "#888", textTransform: "uppercase", letterSpacing: "0.08em" }}>Trade rumor · {today}</div>
+                <div style={{ fontSize: 11, ...mono, color: "#888", textTransform: "uppercase", letterSpacing: "0.08em" }}>Rumor · {today}</div>
               </div>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 7 }}>
                 <Badge {...cfg} />
                 {classifyCfg && <Badge {...classifyCfg} />}
                 <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: 11, ...mono, color: "#888", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 2 }}>Overall score</div>
-                  <div style={{ fontSize: 24, fontWeight: 500, ...mono, color: cfg.color, lineHeight: 1 }} aria-label={`Overall score: ${validation.overall_likelihood} out of 100`}>{validation.overall_likelihood}</div>
+                  <div style={{ fontSize: 11, ...mono, color: "#888", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 2 }}>BirdDog Score</div>
+                  <div style={{ fontSize: 24, fontWeight: 500, ...mono, color: cfg.color, lineHeight: 1 }} aria-label={`BirdDog Score: ${validation.overall_likelihood} out of 100`}>{validation.overall_likelihood}</div>
                   <div style={{ width: 80, height: 3, background: "#e5e7eb", borderRadius: 2, overflow: "hidden", marginTop: 4, marginLeft: "auto" }} aria-hidden="true">
                     <div style={{ height: "100%", background: cfg.color, borderRadius: 2, width: validation.overall_likelihood + "%" }} />
                   </div>
@@ -390,7 +390,7 @@ export default function BirdDogExpress() {
               <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
                 <span aria-hidden="true" style={{ fontSize: 14, marginTop: 1, flexShrink: 0 }}>ⓘ</span>
                 <p style={{ fontSize: 13, color: "#633806", lineHeight: 1.6, margin: 0 }}>
-                  <strong style={{ color: "#412402", fontWeight: 500 }}>Fan-driven signal detected.</strong> High fan interest without reporter corroboration is a noise indicator, not a deal signal. Sentiment has been discounted from the overall score.
+                  <strong style={{ color: "#412402", fontWeight: 500 }}>Fan-driven signal detected.</strong> High fan interest without reporter corroboration is a noise indicator, not a deal signal. Fan heat has been discounted from the BirdDog Score.
                 </p>
               </div>
             </Panel>
@@ -398,14 +398,14 @@ export default function BirdDogExpress() {
 
           <Panel>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>
-              <Ring value={validation.credibility_score} color={cfg.color} label="Credibility" sublabel="Source weight" />
-              <Ring value={validation.fit_score}         color={cfg.color} label="Fit"         sublabel="Team alignment" />
-              <Ring value={validation.sentiment_score || 0} color={cfg.color} label="Sentiment" sublabel="Market signal" discounted={validation.sentiment_discounted} />
+              <Ring value={validation.credibility_score} color={cfg.color} label="Reporter Cred" sublabel="Reporter cred" />
+              <Ring value={validation.fit_score}         color={cfg.color} label="Player Fit"    sublabel="Team fit" />
+              <Ring value={validation.sentiment_score || 0} color={cfg.color} label="Fan Heat" sublabel="Fan heat" discounted={validation.sentiment_discounted} />
             </div>
           </Panel>
 
           <Panel>
-            <SectionHeading>Analysis summary</SectionHeading>
+            <SectionHeading>Scout's Take</SectionHeading>
             <p style={{ fontSize: 13, lineHeight: 1.75, color: "#444", margin: 0 }}>{validation.summary}</p>
           </Panel>
 
@@ -432,10 +432,10 @@ export default function BirdDogExpress() {
                   const sentSt = validation.sentiment_discounted ? "Elevated" : "Low";
                   return (
                     <>
-                      <MarketRow label="National media"   context="ESPN, Athletic, MLB.com" statusText={natSt}  dotColor={marketDot(natSt)}  note="" />
-                      <MarketRow label="Origin beat"      context="Local coverage"          statusText={origSt} dotColor={marketDot(origSt)} note="" />
-                      <MarketRow label="Destination beat" context="Local coverage"          statusText={destSt} dotColor={marketDot(destSt)} note="" />
-                      <MarketRow label="Social sentiment" context="Fan vs. credible"        statusText={sentSt} dotColor={marketDot(sentSt)} note={validation.sentiment_discounted ? "Fan-driven · discounted" : ""} last />
+                      <MarketRow label="National media"    context="ESPN, Athletic, MLB.com"  statusText={natSt}  dotColor={marketDot(natSt)}  note="" />
+                      <MarketRow label="Selling market"    context="Local coverage"            statusText={origSt} dotColor={marketDot(origSt)} note="" />
+                      <MarketRow label="Buying market"     context="Local coverage"            statusText={destSt} dotColor={marketDot(destSt)} note="" />
+                      <MarketRow label="Buyer/Seller chatter" context="Fan buzz vs. reporter intel" statusText={sentSt} dotColor={marketDot(sentSt)} note={validation.sentiment_discounted ? "Fan buzz only · not a credibility signal" : ""} last />
                     </>
                   );
                 }
@@ -446,10 +446,10 @@ export default function BirdDogExpress() {
                 const sentSt  = validation.sentiment_discounted ? "Elevated" : "Low";
                 return (
                   <>
-                    <MarketRow label="National media"   context="ESPN, Athletic, MLB.com"      statusText={natSt}  dotColor={marketDot(natSt)}  note={natNote} />
-                    <MarketRow label="Origin beat"      context={cm.origin_beat?.outlet || "Local"}      statusText={origSt} dotColor={marketDot(origSt)} note="" />
-                    <MarketRow label="Destination beat" context={cm.destination_beat?.outlet || "Local"} statusText={destSt} dotColor={marketDot(destSt)} note="" />
-                    <MarketRow label="Social sentiment" context="Fan vs. credible"              statusText={sentSt} dotColor={marketDot(sentSt)} note={validation.sentiment_discounted ? "Fan-driven · discounted" : ""} last />
+                    <MarketRow label="National media"    context="ESPN, Athletic, MLB.com"       statusText={natSt}  dotColor={marketDot(natSt)}  note={natNote} />
+                    <MarketRow label="Selling market"    context={cm.origin_beat?.outlet || "Local coverage"}      statusText={origSt} dotColor={marketDot(origSt)} note="" />
+                    <MarketRow label="Buying market"     context={cm.destination_beat?.outlet || "Local coverage"} statusText={destSt} dotColor={marketDot(destSt)} note="" />
+                    <MarketRow label="Buyer/Seller chatter" context="Fan buzz vs. reporter intel"   statusText={sentSt} dotColor={marketDot(sentSt)} note={validation.sentiment_discounted ? "Fan buzz only · not a credibility signal" : ""} last />
                   </>
                 );
               })()}
@@ -477,12 +477,12 @@ export default function BirdDogExpress() {
 
           {validation.fit_analysis && (
             <Panel>
-              <SectionHeading>Fit analysis</SectionHeading>
+              <SectionHeading>Player Fit</SectionHeading>
               <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, ...mono, tableLayout: "fixed" }}>
                   <thead>
                     <tr>
-                      <th scope="col" style={{ textAlign: "left", paddingBottom: 8, fontWeight: 400, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", width: "30%" }}>Metric</th>
+                      <th scope="col" style={{ textAlign: "left", paddingBottom: 8, fontWeight: 400, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", width: "30%" }}>Category</th>
                       <th scope="col" style={{ textAlign: "left", paddingBottom: 8, fontWeight: 400, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888" }}>Finding</th>
                     </tr>
                   </thead>
@@ -504,7 +504,7 @@ export default function BirdDogExpress() {
           )}
 
           <Panel>
-            <SectionHeading>Reasoning</SectionHeading>
+            <SectionHeading>How We Called It</SectionHeading>
             <p style={{ fontSize: 13, lineHeight: 1.75, color: "#444", margin: 0 }}>{validation.reasoning}</p>
             {validation.qc_footer && (
               <p style={{ fontSize: 11, color: "#bbb", ...mono, marginTop: 10, paddingTop: 8, borderTop: "0.5px solid #f3f4f6", margin: "10px 0 0" }}>{validation.qc_footer}</p>
@@ -542,7 +542,7 @@ export default function BirdDogExpress() {
             {["tracker","history"].map(tab => (
               <button key={tab} role="tab" aria-selected={activeTab === tab} onClick={() => setActiveTab(tab)}
                 style={{ ...mono, fontSize: 12, padding: "6px 14px", borderRadius: 6, border: "0.5px solid", borderColor: activeTab === tab ? "#B8960C" : "rgba(245,240,232,0.25)", background: activeTab === tab ? "#B8960C" : "transparent", color: activeTab === tab ? "#1B1200" : "#F5F0E8", cursor: "pointer", textTransform: "capitalize", letterSpacing: "0.08em", minHeight: 44, fontWeight: activeTab === tab ? 500 : 400 }}>
-                {tab === "history" ? `History (${history.length})` : "Tracker"}
+                {tab === "history" ? `The Binder (${history.length})` : "Tracker"}
               </button>
             ))}
           </div>
@@ -552,7 +552,7 @@ export default function BirdDogExpress() {
       <main id="main-content">
         {activeTab === "history" && (
           <div style={{ maxWidth: 720, margin: "0 auto", padding: "24px 16px" }}>
-            <h2 style={{ fontSize: 11, ...mono, color: "#888", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 14, fontWeight: 500 }}>Recent validations</h2>
+            <h2 style={{ fontSize: 11, ...mono, color: "#888", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 14, fontWeight: 500 }}>The Binder</h2>
             {history.length === 0
               ? <Panel><p style={{ textAlign: "center", color: "#bbb", padding: "40px 0", fontSize: 14, margin: 0 }}>No ABs yet. Step up to the plate.</p></Panel>
               : <div style={{ display: "flex", flexDirection: "column", gap: 8 }} role="list">
@@ -572,7 +572,7 @@ export default function BirdDogExpress() {
                             <dl style={{ fontSize: 11, ...mono, color: "#888", display: "flex", gap: 10, margin: 0 }}>
                               <div><dt style={{ display: "inline" }}>Cred: </dt><dd style={{ display: "inline", color: hc.color, fontWeight: 500 }}>{h.credibility}</dd></div>
                               <div><dt style={{ display: "inline" }}>Fit: </dt><dd style={{ display: "inline", color: hc.color, fontWeight: 500 }}>{h.fit}</dd></div>
-                              <div><dt style={{ display: "inline" }}>Overall: </dt><dd style={{ display: "inline", color: hc.color, fontWeight: 500 }}>{h.overall}</dd></div>
+                              <div><dt style={{ display: "inline" }}>Score: </dt><dd style={{ display: "inline", color: hc.color, fontWeight: 500 }}>{h.overall}</dd></div>
                             </dl>
                           </div>
                         </div>
