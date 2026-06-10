@@ -30,7 +30,7 @@ const MLB_TEAMS = [
 
 const STEPS = [
   { key: "received",    label: "Rumor received",               detail: (r) => r.length > 60 ? r.substring(0, 60) + "…" : r },
-  { key: "national",    label: "Searching national reporters",  detail: () => "Passan · Rosenthal · Heyman · Feinsand · Nightengale · Morosi" },
+  { key: "national",    label: "Searching national reporters",  detail: () => "Passan · Rosenthal · Olney · Feinsand · Sammon · Nightengale · Morosi" },
   { key: "local",       label: "Checking local beat coverage",  detail: () => "Origin beat · Destination beat · Regional outlets" },
   { key: "crossmarket", label: "Cross-referencing markets",     detail: () => "Comparing origin · destination · national signal" },
   { key: "fit",         label: "Analyzing team fit",            detail: () => "Roster · Financial · Strategic · GM profile" },
@@ -383,7 +383,7 @@ export default function BirdDogExpress() {
           style={{ ...inputBase, resize: "vertical", lineHeight: 1.7, fontSize: 14 }}
         />
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 5 }}>
-          <span id="rumor-hint" style={{ fontSize: 11, color: "#aaa", ...mono }}>Cmd+Enter to submit</span>
+          <span id="rumor-hint" style={{ fontSize: 11, color: "#aaa", ...mono }}>Cmd+Enter to submit · Passan · Rosenthal · Olney · Feinsand · Sammon · Nightengale · Morosi · Beat writers · All 30 markets</span>
           <span id="char-count" aria-live="polite" style={{ fontSize: 11, ...mono, color: charColor }}>
             {remaining < 0 ? `${Math.abs(remaining)} over limit` : `${remaining} left`}
           </span>
@@ -428,7 +428,7 @@ export default function BirdDogExpress() {
 
       {step === "error" && (
         <Panel role="alert">
-          <SectionHeading>Validation failed</SectionHeading>
+          <SectionHeading>Error on the play.</SectionHeading>
           <p style={{ fontSize: 13, color: "#791F1F", ...mono, lineHeight: 1.6, wordBreak: "break-all", margin: 0 }}>{errorMsg}</p>
         </Panel>
       )}
@@ -495,7 +495,7 @@ export default function BirdDogExpress() {
                     const hasReport = !s.toLowerCase().includes("not found") && !s.toLowerCase().includes("no report");
                     return <SourceRow key={i} name={parts[0] || s} context={parts[1] || ""} status={hasReport ? "Reported" : "No report"} last={i === arr.length - 1} />;
                   })
-                : <p style={{ fontSize: 13, color: "#999", margin: 0 }}>No sources found.</p>
+                : <p style={{ fontSize: 13, color: "#999", margin: 0 }}>Nobody's talking about this around the cooler.</p>
               }
             </Panel>
             <Panel>
@@ -700,7 +700,7 @@ export default function BirdDogExpress() {
           <div style={{ maxWidth: 720, margin: "0 auto", padding: "24px 16px" }}>
             <h2 style={{ fontSize: 11, ...mono, color: "#888", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 14, fontWeight: 500 }}>Recent validations</h2>
             {history.length === 0
-              ? <Panel><p style={{ textAlign: "center", color: "#bbb", padding: "40px 0", fontSize: 14, margin: 0 }}>No rumors validated yet.</p></Panel>
+              ? <Panel><p style={{ textAlign: "center", color: "#bbb", padding: "40px 0", fontSize: 14, margin: 0 }}>No ABs yet. Step up to the plate.</p></Panel>
               : <div style={{ display: "flex", flexDirection: "column", gap: 8 }} role="list">
                   {history.map(h => {
                     const hc  = VERDICT_CONFIG[h.verdict] || VERDICT_CONFIG.UNVERIFIED;
