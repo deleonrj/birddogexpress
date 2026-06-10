@@ -7,13 +7,13 @@ export const config = {
 
 // ── User-facing error messages — never expose raw API errors publicly ─────────
 function userFacingError(status, rawMessage) {
-  if (status === 429) return { code: "RATE_LIMIT",   message: "High demand right now — please try again in 30 seconds." };
-  if (status === 401) return { code: "AUTH",         message: "Service configuration error. Please try again later." };
-  if (status === 529) return { code: "OVERLOADED",   message: "Our analysis service is temporarily busy. Please try again in a moment." };
-  if (status >= 500)  return { code: "SERVER_ERROR", message: "Something went wrong on our end. Please try again." };
-  if (rawMessage?.toLowerCase().includes("timeout")) return { code: "TIMEOUT", message: "This is taking longer than expected. Please try again." };
-  if (rawMessage?.toLowerCase().includes("no text")) return { code: "EMPTY",   message: "We couldn't analyze that rumor. Try rephrasing it." };
-  return { code: "UNKNOWN", message: "Something went wrong. Please try again." };
+  if (status === 429) return { code: "RATE_LIMIT",   message: "The phone lines are jammed. Step away from the hot stove and try again in a bit." };
+  if (status === 401) return { code: "AUTH",         message: "Locked out of the front office. Give us a minute." };
+  if (status === 529) return { code: "OVERLOADED",   message: "Everyone's on a call with their agent. Check back in a moment." };
+  if (status >= 500)  return { code: "SERVER_ERROR", message: "That one hit the foul pole. Try again." };
+  if (rawMessage?.toLowerCase().includes("timeout")) return { code: "TIMEOUT", message: "The GM has us on hold still. Check back later." };
+  if (rawMessage?.toLowerCase().includes("no text")) return { code: "EMPTY",   message: "Whiffed on that one. Try rephrasing the rumor." };
+  return { code: "UNKNOWN", message: "Even Gold Glovers boot one sometimes. Try catching the next rumor." };
 }
 
 // ── Retry wrapper — one retry on 429 with 15s backoff ────────────────────────
@@ -34,16 +34,16 @@ export default async function handler(req, res) {
   const { rumor } = req.body;
 
   if (!rumor?.trim()) {
-    return res.status(400).json({ error: "Please enter a valid MLB rumor to validate." });
+    return res.status(400).json({ error: "Can't get a hit if you don't step up to the plate." });
   }
 
   if (rumor.trim().length > 255) {
-    return res.status(400).json({ error: "Rumor must be 255 characters or less." });
+    return res.status(400).json({ error: "Working the count a little too hard. Keep it under 255 characters." });
   }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
-    return res.status(500).json({ error: "Service configuration error. Please try again later." });
+    return res.status(500).json({ error: "Locked out of the front office. Give us a minute." });
   }
 
   const today    = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
@@ -131,6 +131,13 @@ export default async function handler(req, res) {
     "High sentiment + high sources = CORROBORATED.",
     "Low sentiment + high sources = REPORTER_LED.",
     "Low sentiment + low sources = NOISE.",
+    "",
+    "REPORTER CREDIBILITY WEIGHTS:",
+    "Tier 1 — strongest signal, treat as near-confirmation: Passan (ESPN), Rosenthal (The Athletic), Olney (ESPN), Feinsand (MLB.com), Sammon (The Athletic).",
+    "Tier 2 — corroborating signal, meaningful but not definitive: Nightengale (USA Today), Morosi (MLB Network), Murray (FanSided).",
+    "Tier 3 — rumor plant, low weight: Heyman (MLB Network). Fast but known for floating agent-driven trial balloons. A Heyman report alone does not confirm a rumor.",
+    "Aggregators (Bleacher Report, FanSided roundups, Reddit): no credibility weight. Treat as noise.",
+    "Two or more Tier 1 reporters = CORROBORATED. One Tier 1 alone = PLAUSIBLE. Heyman alone = WEAK.",
     "",
     "RUMOR CLASSIFICATION (pick one): REPORTER_LED | CORROBORATED | FAN_DRIVEN | NOISE",
     "",
