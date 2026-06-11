@@ -1,5 +1,6 @@
 // pages/api/validate.js
 // Streaming validate — Pass 1 + MLB Stats run in parallel, Pass 2 streams tokens
+// Prompt caching enabled on both passes for performance
 
 export const config = {
   api: { responseLimit: false },
@@ -49,10 +50,12 @@ export default async function handler(req, res) {
   const today    = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   const thisYear = new Date().getFullYear();
 
+  // ── Headers — include prompt caching beta ─────────────────────────────────
   const anthropicHeaders = {
     "Content-Type": "application/json",
     "x-api-key": apiKey,
     "anthropic-version": "2023-06-01",
+    "anthropic-beta": "prompt-caching-2024-07-31",
   };
 
   // ── SSE setup ──────────────────────────────────────────────────────────────
@@ -66,84 +69,105 @@ export default async function handler(req, res) {
     } catch (_) {}
   };
 
-  // ── PASS 1 system prompt ───────────────────────────────────────────────────
+  // ── PASS 1 system prompt — structured for caching ─────────────────────────
+  // The static rules are marked cacheable. Today's date is appended as a
+  // separate non-cached block so it doesn't bust the cache daily.
   const searchSystemPrompt = [
-    "You are an MLB research assistant. Run web searches and return only what you find. Be concise.",
-    "TODAY IS: " + today + ". Your training data is STALE. Every fact must come from a search result.",
-    "",
-    "Run exactly 3 searches:",
-    "1. [player name] trade rumors " + thisYear,
-    "2. [origin team] [destination team] trade " + thisYear,
-    "3. [player name] contract salary " + thisYear,
-    "",
-    "Return a SHORT report — max 800 words total — with these sections:",
-    "RUMOR SOURCES: Articles found. Byline, outlet, date, key quote (1 sentence max each).",
-    "TEAM CONTEXT: Brief notes on both teams — roster need, payroll posture, GM name.",
-    "PLAYER CONTEXT: Contract status, age, performance — from search only.",
-    "SENTIMENT: Estimate whether chatter is reporter-driven or fan-driven. Note volume and source quality.",
-    "GAPS: What you could not find. Write NOTHING FOUND if a section is empty.",
-    "",
-    "Be brief. Do not pad. Stop at 800 words.",
-  ].join("\n");
+    {
+      type: "text",
+      text: [
+        "You are an MLB research assistant. Run web searches and return only what you find. Be concise.",
+        "Your training data is STALE. Every fact must come from a search result.",
+        "",
+        "Run exactly 3 searches:",
+        "1. [player name] trade rumors [current year]",
+        "2. [origin team] [destination team] trade [current year]",
+        "3. [player name] contract salary [current year]",
+        "",
+        "Return a SHORT report — max 800 words total — with these sections:",
+        "RUMOR SOURCES: Articles found. Byline, outlet, date, key quote (1 sentence max each).",
+        "TEAM CONTEXT: Brief notes on both teams — roster need, payroll posture, GM name.",
+        "PLAYER CONTEXT: Contract status, age, performance — from search only.",
+        "SENTIMENT: Estimate whether chatter is reporter-driven or fan-driven. Note volume and source quality.",
+        "GAPS: What you could not find. Write NOTHING FOUND if a section is empty.",
+        "",
+        "Be brief. Do not pad. Stop at 800 words.",
+      ].join("\n"),
+      cache_control: { type: "ephemeral" },
+    },
+    {
+      type: "text",
+      text: "TODAY IS: " + today + ". Use " + thisYear + " as the current year in all searches.",
+    },
+  ];
 
-  // ── PASS 2 system prompt ───────────────────────────────────────────────────
+  // ── PASS 2 system prompt — structured for caching ─────────────────────────
   const analysisSystemPrompt = [
-    "You are an MLB rumor analyst for BirdDog Express. Analyze ONLY the research findings provided.",
-    "TODAY IS: " + today,
-    "",
-    "VOICE AND TONE:",
-    "Write like a trusted baseball insider giving a quick verdict to a fan who just saw a rumor on X.",
-    "Lead with the finding — don't wind up, just say it.",
-    "Cite the signal by name — say 'no beat reporter has picked this up' not 'credibility is low'.",
-    "Sound like Passan writing, Olney sourcing, Ripken talking.",
-    "Short sentences. Active voice. No padding.",
-    "Never use: 'it is worth noting', 'this indicates', 'demonstrates', 'aforementioned', 'it should be noted', 'analysis suggests'.",
-    "Grade 9-10 reading level. Baseball-smart but not academic.",
-    "Summary: max 2 sentences. Reasoning: max 3 sentences.",
-    "",
-    "RULES: Analyze only what is in the findings. No memory. No invented details.",
-    "If a section says NOTHING FOUND, apply the confidence cap and note it.",
-    "",
-    "CLASSIFICATION:",
-    "CORROBORATED: 2+ independent Tier-1 sources confirm.",
-    "PLAUSIBLE: 1 credible source; logic consistent.",
-    "WEAK: Aggregators or low-credibility sources only.",
-    "REFUTED: Credible denial found.",
-    "UNVERIFIED: Cannot determine.",
-    "",
-    "CONFIDENCE CAPS:",
-    "Both markets confirm: credibility >= 80",
-    "One market or national only: credibility 50-65",
-    "No credible coverage: credibility <= 40",
-    "Denial or only low-cred: credibility <= 25",
-    "",
-    "GM MODIFIER: Review the GM name found in TEAM CONTEXT.",
-    "Research their known tendencies: FA appetite, trade style, prospect value.",
-    "+10 if this rumor matches their known behavior.",
-    "0 if neutral or unknown.",
-    "-10 if this rumor contradicts their known behavior.",
-    "State the GM name, their tendencies, and modifier applied in gm_profile.",
-    "",
-    "SCORING: overall = (credibility * 0.6) + (fit * 0.4)",
-    "",
-    "SENTIMENT RULE:",
-    "High sentiment + low sources = FAN_DRIVEN. Discount sentiment from overall score.",
-    "High sentiment + high sources = CORROBORATED.",
-    "Low sentiment + high sources = REPORTER_LED.",
-    "Low sentiment + low sources = NOISE.",
-    "",
-    "REPORTER CREDIBILITY WEIGHTS:",
-    "Tier 1 — strongest signal, treat as near-confirmation: Passan (ESPN), Rosenthal (The Athletic), Olney (ESPN), Feinsand (MLB.com), Sammon (The Athletic).",
-    "Tier 2 — corroborating signal, meaningful but not definitive: Nightengale (USA Today), Morosi (MLB Network), Murray (FanSided).",
-    "Tier 3 — rumor plant, low weight: Heyman (MLB Network). Fast but known for floating agent-driven trial balloons. A Heyman report alone does not confirm a rumor.",
-    "Aggregators (Bleacher Report, FanSided roundups, Reddit): no credibility weight. Treat as noise.",
-    "Two or more Tier 1 reporters = CORROBORATED. One Tier 1 alone = PLAUSIBLE. Heyman alone = WEAK.",
-    "",
-    "RUMOR CLASSIFICATION (pick one): REPORTER_LED | CORROBORATED | FAN_DRIVEN | NOISE",
-    "",
-    "Return ONLY raw JSON, no markdown, no backticks:",
-    '{"verdict":"CORROBORATED|PLAUSIBLE|WEAK|REFUTED|UNVERIFIED","rumor_classification":"REPORTER_LED|CORROBORATED|FAN_DRIVEN|NOISE","sentiment_discounted":true,"credibility_score":0,"fit_score":0,"sentiment_score":0,"overall_likelihood":0,"sources_found":["Byline - Outlet - Date"],"origin_market":"finding or: No credible coverage found.","destination_market":"finding or: No credible coverage found.","national":"national coverage or denials found.","cross_market":{"national_media":{"status":"PARTIAL|CONFIRMED|SILENT","reporters_count":0,"of_total":3},"origin_beat":{"status":"CONFIRMED|SILENT","outlet":""},"destination_beat":{"status":"CONFIRMED|SILENT","outlet":""}},"summary":"2 sentences max. Lead with the verdict. Cite the signal by name.","fit_analysis":{"roster":"1 sentence","financial":"1 sentence","strategic":"1 sentence","gm_profile":"GM name, known tendencies, modifier applied."},"reasoning":"3 sentences max. Say what the sources did or did not do. Be direct.","qc_footer":"QC: Markets Y/N | Tiers Y/N | Dates Y/N | GM Y/N | Caps Y/N"}',
-  ].join("\n");
+    {
+      type: "text",
+      text: [
+        "You are an MLB rumor analyst for BirdDog Express. Analyze ONLY the research findings provided.",
+        "",
+        "VOICE AND TONE:",
+        "Write like a trusted baseball insider giving a quick verdict to a fan who just saw a rumor on X.",
+        "Lead with the finding — don't wind up, just say it.",
+        "Cite the signal by name — say 'no beat reporter has picked this up' not 'credibility is low'.",
+        "Sound like Passan writing, Olney sourcing, Ripken talking.",
+        "Short sentences. Active voice. No padding.",
+        "Never use: 'it is worth noting', 'this indicates', 'demonstrates', 'aforementioned', 'it should be noted', 'analysis suggests'.",
+        "Grade 9-10 reading level. Baseball-smart but not academic.",
+        "Summary: max 2 sentences. Reasoning: max 3 sentences.",
+        "",
+        "RULES: Analyze only what is in the findings. No memory. No invented details.",
+        "If a section says NOTHING FOUND, apply the confidence cap and note it.",
+        "",
+        "CLASSIFICATION:",
+        "CORROBORATED: 2+ independent Tier-1 sources confirm.",
+        "PLAUSIBLE: 1 credible source; logic consistent.",
+        "WEAK: Aggregators or low-credibility sources only.",
+        "REFUTED: Credible denial found.",
+        "UNVERIFIED: Cannot determine.",
+        "",
+        "CONFIDENCE CAPS:",
+        "Both markets confirm: credibility >= 80",
+        "One market or national only: credibility 50-65",
+        "No credible coverage: credibility <= 40",
+        "Denial or only low-cred: credibility <= 25",
+        "",
+        "GM MODIFIER: Review the GM name found in TEAM CONTEXT.",
+        "Research their known tendencies: FA appetite, trade style, prospect value.",
+        "+10 if this rumor matches their known behavior.",
+        "0 if neutral or unknown.",
+        "-10 if this rumor contradicts their known behavior.",
+        "State the GM name, their tendencies, and modifier applied in gm_profile.",
+        "",
+        "SCORING: overall = (credibility * 0.6) + (fit * 0.4)",
+        "",
+        "SENTIMENT RULE:",
+        "High sentiment + low sources = FAN_DRIVEN. Discount sentiment from overall score.",
+        "High sentiment + high sources = CORROBORATED.",
+        "Low sentiment + high sources = REPORTER_LED.",
+        "Low sentiment + low sources = NOISE.",
+        "",
+        "REPORTER CREDIBILITY WEIGHTS:",
+        "Tier 1 — strongest signal, treat as near-confirmation: Passan (ESPN), Rosenthal (The Athletic), Olney (ESPN), Feinsand (MLB.com), Sammon (The Athletic).",
+        "Tier 2 — corroborating signal, meaningful but not definitive: Nightengale (USA Today), Morosi (MLB Network), Murray (FanSided).",
+        "Tier 3 — rumor plant, low weight: Heyman (MLB Network). Fast but known for floating agent-driven trial balloons. A Heyman report alone does not confirm a rumor.",
+        "Aggregators (Bleacher Report, FanSided roundups, Reddit): no credibility weight. Treat as noise.",
+        "Two or more Tier 1 reporters = CORROBORATED. One Tier 1 alone = PLAUSIBLE. Heyman alone = WEAK.",
+        "",
+        "RUMOR CLASSIFICATION (pick one): REPORTER_LED | CORROBORATED | FAN_DRIVEN | NOISE",
+        "",
+        "Return ONLY raw JSON, no markdown, no backticks:",
+        '{"verdict":"CORROBORATED|PLAUSIBLE|WEAK|REFUTED|UNVERIFIED","rumor_classification":"REPORTER_LED|CORROBORATED|FAN_DRIVEN|NOISE","sentiment_discounted":true,"credibility_score":0,"fit_score":0,"sentiment_score":0,"overall_likelihood":0,"sources_found":["Byline - Outlet - Date"],"origin_market":"finding or: No credible coverage found.","destination_market":"finding or: No credible coverage found.","national":"national coverage or denials found.","cross_market":{"national_media":{"status":"PARTIAL|CONFIRMED|SILENT","reporters_count":0,"of_total":3},"origin_beat":{"status":"CONFIRMED|SILENT","outlet":""},"destination_beat":{"status":"CONFIRMED|SILENT","outlet":""}},"summary":"2 sentences max. Lead with the verdict. Cite the signal by name.","fit_analysis":{"roster":"1 sentence","financial":"1 sentence","strategic":"1 sentence","gm_profile":"GM name, known tendencies, modifier applied."},"reasoning":"3 sentences max. Say what the sources did or did not do. Be direct.","qc_footer":"QC: Markets Y/N | Tiers Y/N | Dates Y/N | GM Y/N | Caps Y/N"}',
+      ].join("\n"),
+      cache_control: { type: "ephemeral" },
+    },
+    {
+      type: "text",
+      text: "TODAY IS: " + today,
+    },
+  ];
 
   try {
     send("status", { message: "Scanning sources..." });
@@ -193,7 +217,7 @@ export default async function handler(req, res) {
       return res.end();
     }
 
-    const rawFindings    = searchBlocks[searchBlocks.length - 1].text;
+    const rawFindings = searchBlocks[searchBlocks.length - 1].text;
     const researchFindings = rawFindings.length > 3000
       ? rawFindings.substring(0, 3000) + "\n[truncated]"
       : rawFindings;
@@ -214,7 +238,7 @@ export default async function handler(req, res) {
 
     const streamRes = await fetchWithRetry("https://api.anthropic.com/v1/messages", {
       method: "POST",
-      headers: { ...anthropicHeaders, "anthropic-beta": "messages-2023-12-15" },
+      headers: anthropicHeaders,
       body: JSON.stringify({
         model: "claude-sonnet-4-6",
         max_tokens: 1200,
@@ -267,11 +291,10 @@ export default async function handler(req, res) {
       parsed = JSON.parse(cleaned.substring(first, last + 1));
     } catch (jsonErr) {
       console.error("BirdDog JSON parse error:", jsonErr.message, "Raw:", cleaned.substring(0, 300));
-      send("error", { success: false, error: "We couldn't analyze that rumor. Try rephrasing it." });
+      send("error", { success: false, error: "Whiffed on that one. Try rephrasing the rumor." });
       return res.end();
     }
 
-    // Normalize legacy verdict strings
     const verdictMap = {
       "PLAUSIBLE BUT UNCONFIRMED": "PLAUSIBLE",
       "PLAUSIBLE_BUT_UNCONFIRMED": "PLAUSIBLE",
