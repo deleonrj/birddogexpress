@@ -34,7 +34,7 @@ const STEPS = [
   { key: "local",       label: "Checking local beat coverage",  detail: () => "Selling market · Buying market · Regional outlets" },
   { key: "crossmarket", label: "Cross-referencing markets",     detail: () => "Comparing selling market · buying market · national intel" },
   { key: "fit",         label: "Analyzing player fit",          detail: () => "Roster · Financial · Strategic · GM profile" },
-  { key: "scoring",     label: "Calling the verdict",           detail: () => "Reporter cred · Player fit · Fan heat · BirdDog Score" },
+  { key: "scoring",     label: "Building BirdDog's Take",      detail: () => "Reporter cred · Player fit · Fan heat · BirdDog Score" },
 ];
 const STEP_SEQUENCE = ["received","national","local","crossmarket","fit","scoring"];
 const STEP_TIMINGS  = { received:0, national:2, local:6, crossmarket:10, fit:16, scoring:22 };
