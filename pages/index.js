@@ -506,9 +506,6 @@ export default function BirdDogExpress() {
           <Panel>
             <SectionHeading>How We Called It</SectionHeading>
             <p style={{ fontSize: 13, lineHeight: 1.75, color: "#444", margin: 0 }}>{validation.reasoning}</p>
-            {validation.qc_footer && (
-              <p style={{ fontSize: 11, color: "#bbb", ...mono, marginTop: 10, paddingTop: 8, borderTop: "0.5px solid #f3f4f6", margin: "10px 0 0" }}>{validation.qc_footer}</p>
-            )}
           </Panel>
 
           {!wide && (
