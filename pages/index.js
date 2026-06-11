@@ -130,7 +130,7 @@ function ProgressSteps({ rumor, activeStep, elapsed }) {
   const activeIdx = STEP_SEQUENCE.indexOf(activeStep);
   return (
     <Panel>
-      <SectionHeading>Checking the hot stove...</SectionHeading>
+      <SectionHeading>BirdDog's nose to the ground...</SectionHeading>
       <div role="status" aria-live="polite" aria-label={`Step: ${STEPS[activeIdx]?.label || "processing"}`} style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0,0,0,0)" }}>
         {STEPS[activeIdx]?.label}
       </div>
@@ -504,11 +504,11 @@ export default function BirdDogExpress() {
           )}
 
           {/* Who Else Might Be Sniffing Around */}
-          {(validation.potential_suitors?.length > 0 || validation.darkhorse?.team) && (
+          {(validation.potential_suitors?.length > 0 || validation.darkhorse?.team) ? (
             <Panel>
               <SectionHeading>Who Else Might Be Sniffing Around</SectionHeading>
               <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-                {validation.potential_suitors?.map((s, i, arr) => (
+                {validation.potential_suitors?.map((s, i) => (
                   <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "9px 0", borderBottom: "0.5px solid #f3f4f6" }}>
                     <div style={{ flexShrink: 0, width: 6, height: 6, borderRadius: "50%", background: "#1B5E30", marginTop: 6 }} aria-hidden="true" />
                     <div>
@@ -529,13 +529,12 @@ export default function BirdDogExpress() {
                     </div>
                   </div>
                 )}
-                {validation.darkhorse_note && !validation.potential_suitors?.length && (
-                  <p style={{ fontSize: 12, color: "#999", margin: 0, padding: "8px 0" }}>{validation.darkhorse_note}</p>
-                )}
               </div>
-              <div style={{ marginTop: 10, paddingTop: 10, borderTop: "0.5px solid #f3f4f6" }}>
-                <p style={{ fontSize: 11, color: "#bbb", ...mono, margin: 0 }}>Based on roster need, payroll posture, and competitive window. Others may be in play.</p>
-              </div>
+            </Panel>
+          ) : validation.potential_suitors !== undefined && (
+            <Panel>
+              <SectionHeading>Who Else Might Be Sniffing Around</SectionHeading>
+              <p style={{ fontSize: 13, color: "#999", margin: 0 }}>BirdDog hasn't picked up a scent on this one...yet.</p>
             </Panel>
           )}
 
