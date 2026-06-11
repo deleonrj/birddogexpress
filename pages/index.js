@@ -503,6 +503,42 @@ export default function BirdDogExpress() {
             </Panel>
           )}
 
+          {/* Who Else Might Be Sniffing Around */}
+          {(validation.potential_suitors?.length > 0 || validation.darkhorse?.team) && (
+            <Panel>
+              <SectionHeading>Who Else Might Be Sniffing Around</SectionHeading>
+              <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                {validation.potential_suitors?.map((s, i, arr) => (
+                  <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "9px 0", borderBottom: "0.5px solid #f3f4f6" }}>
+                    <div style={{ flexShrink: 0, width: 6, height: 6, borderRadius: "50%", background: "#1B5E30", marginTop: 6 }} aria-hidden="true" />
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 500, color: "#111", marginBottom: 2, ...mono }}>{s.team}</div>
+                      <div style={{ fontSize: 12, color: "#555", lineHeight: 1.6 }}>{s.rationale}</div>
+                    </div>
+                  </div>
+                ))}
+                {validation.darkhorse?.team && (
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "9px 0" }}>
+                    <div style={{ flexShrink: 0, width: 6, height: 6, borderRadius: "50%", background: "#B8960C", marginTop: 6 }} aria-hidden="true" />
+                    <div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
+                        <div style={{ fontSize: 13, fontWeight: 500, color: "#111", ...mono }}>{validation.darkhorse.team}</div>
+                        <span style={{ fontSize: 9, ...mono, letterSpacing: "0.1em", textTransform: "uppercase", padding: "2px 7px", borderRadius: 4, background: "#FAEEDA", color: "#854F0B", border: "0.5px solid #EF9F27" }}>Dark horse</span>
+                      </div>
+                      <div style={{ fontSize: 12, color: "#555", lineHeight: 1.6 }}>{validation.darkhorse.rationale}</div>
+                    </div>
+                  </div>
+                )}
+                {validation.darkhorse_note && !validation.potential_suitors?.length && (
+                  <p style={{ fontSize: 12, color: "#999", margin: 0, padding: "8px 0" }}>{validation.darkhorse_note}</p>
+                )}
+              </div>
+              <div style={{ marginTop: 10, paddingTop: 10, borderTop: "0.5px solid #f3f4f6" }}>
+                <p style={{ fontSize: 11, color: "#bbb", ...mono, margin: 0 }}>Based on roster need, payroll posture, and competitive window. Others may be in play.</p>
+              </div>
+            </Panel>
+          )}
+
           <Panel>
             <SectionHeading>How We Called It</SectionHeading>
             <p style={{ fontSize: 13, lineHeight: 1.75, color: "#444", margin: 0 }}>{validation.reasoning}</p>
