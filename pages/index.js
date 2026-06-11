@@ -338,7 +338,7 @@ export default function BirdDogExpress() {
         aria-label={step === "validating" ? "Validation in progress" : step === "result" ? "Clear results and validate a new rumor" : "Validate this rumor"}
         style={{ ...btnBase, background: (!canSubmit && step !== "result") ? "#e5e7eb" : "#111", color: (!canSubmit && step !== "result") ? "#999" : "#fff", width: "100%" }}
       >
-        {step === "validating" ? "Validating…" : step === "result" ? "← New rumor" : "Ask BirdDog →"}
+        {step === "validating" ? "BirdDogging…" : step === "result" ? "← New rumor" : "Ask BirdDog →"}
       </button>
     </div>
   );
@@ -405,7 +405,7 @@ export default function BirdDogExpress() {
           </Panel>
 
           <Panel>
-            <SectionHeading>Scout's Take</SectionHeading>
+            <SectionHeading>BirdDog's Take</SectionHeading>
             <p style={{ fontSize: 13, lineHeight: 1.75, color: "#444", margin: 0 }}>{validation.summary}</p>
           </Panel>
 
