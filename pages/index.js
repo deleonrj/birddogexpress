@@ -390,7 +390,7 @@ export default function BirdDogExpress() {
               <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
                 <span aria-hidden="true" style={{ fontSize: 14, marginTop: 1, flexShrink: 0 }}>ⓘ</span>
                 <p style={{ fontSize: 13, color: "#633806", lineHeight: 1.6, margin: 0 }}>
-                  <strong style={{ color: "#412402", fontWeight: 500 }}>Fan-driven signal detected.</strong> High fan interest without reporter corroboration is a noise indicator, not a deal signal. Fan heat has been discounted from the BirdDog Score.
+                  <strong style={{ color: "#412402", fontWeight: 500 }}>Fans are louder than the reporters on this one.</strong> The buzz is real but it's coming from the stands, not the press box. No reporter with real sources has moved on this. Fan heat has been discounted from the BirdDog Score.
                 </p>
               </div>
             </Panel>
@@ -414,9 +414,13 @@ export default function BirdDogExpress() {
               <SectionHeading>Sources checked</SectionHeading>
               {validation.sources_found?.length > 0
                 ? validation.sources_found.slice(0, 5).map((s, i, arr) => {
-                    const parts = s.split(" - ");
+                    // Resilient parsing — handle " - ", ", ", or " (" separators
+                    const sep = s.includes(" - ") ? " - " : s.includes(", ") ? ", " : null;
+                    const parts = sep ? s.split(sep) : [s];
+                    const name = parts[0]?.replace(/\(.*\)/, "").trim() || s;
+                    const outlet = parts[1]?.trim() || "";
                     const hasReport = !s.toLowerCase().includes("not found") && !s.toLowerCase().includes("no report");
-                    return <SourceRow key={i} name={parts[0] || s} context={parts[1] || ""} status={hasReport ? "Reported" : "No report"} last={i === arr.length - 1} />;
+                    return <SourceRow key={i} name={name} context={outlet} status={hasReport ? "Reported" : "No report"} last={i === arr.length - 1} />;
                   })
                 : <p style={{ fontSize: 13, color: "#999", margin: 0 }}>Nobody's talking about this around the cooler.</p>
               }
@@ -425,31 +429,19 @@ export default function BirdDogExpress() {
               <SectionHeading>Cross-market coverage</SectionHeading>
               {(() => {
                 const cm = validation.cross_market;
-                if (!cm) {
-                  const natSt  = validation.national?.toLowerCase().includes("no") ? "Silent" : "Partial";
-                  const origSt = validation.origin_market?.toLowerCase().includes("no credible") ? "Silent" : "Partial";
-                  const destSt = validation.destination_market?.toLowerCase().includes("no credible") ? "Silent" : "Partial";
-                  const sentSt = validation.sentiment_discounted ? "Elevated" : "Low";
-                  return (
-                    <>
-                      <MarketRow label="National media"    context="ESPN, Athletic, MLB.com"  statusText={natSt}  dotColor={marketDot(natSt)}  note="" />
-                      <MarketRow label="Selling market"    context="Local coverage"            statusText={origSt} dotColor={marketDot(origSt)} note="" />
-                      <MarketRow label="Buying market"     context="Local coverage"            statusText={destSt} dotColor={marketDot(destSt)} note="" />
-                      <MarketRow label="Buyer/Seller chatter" context="Fan buzz vs. reporter intel" statusText={sentSt} dotColor={marketDot(sentSt)} note={validation.sentiment_discounted ? "Fan buzz only · not a credibility signal" : ""} last />
-                    </>
-                  );
-                }
-                const natSt   = cm.national_media?.status === "CONFIRMED" ? "Confirmed" : cm.national_media?.status === "PARTIAL" ? "Partial" : "Silent";
-                const natNote = cm.national_media ? `${cm.national_media.reporters_count} of ${cm.national_media.of_total} reporting` : "";
-                const origSt  = cm.origin_beat?.status === "CONFIRMED" ? "Confirmed" : "Silent";
-                const destSt  = cm.destination_beat?.status === "CONFIRMED" ? "Confirmed" : "Silent";
+                const natSt   = cm?.national_media?.status === "CONFIRMED" ? "Confirmed" : cm?.national_media?.status === "PARTIAL" ? "Partial" : "Silent";
+                const natNote = cm?.national_media ? `${cm.national_media.reporters_count} of ${cm.national_media.of_total} reporting` : "";
+                const origSt  = cm?.origin_beat?.status === "CONFIRMED" ? "Confirmed" : "Silent";
+                const destSt  = cm?.destination_beat?.status === "CONFIRMED" ? "Confirmed" : "Silent";
                 const sentSt  = validation.sentiment_discounted ? "Elevated" : "Low";
+                const origCtx = cm?.origin_beat?.outlet || "Local coverage";
+                const destCtx = cm?.destination_beat?.outlet || "Local coverage";
                 return (
                   <>
-                    <MarketRow label="National media"    context="ESPN, Athletic, MLB.com"       statusText={natSt}  dotColor={marketDot(natSt)}  note={natNote} />
-                    <MarketRow label="Selling market"    context={cm.origin_beat?.outlet || "Local coverage"}      statusText={origSt} dotColor={marketDot(origSt)} note="" />
-                    <MarketRow label="Buying market"     context={cm.destination_beat?.outlet || "Local coverage"} statusText={destSt} dotColor={marketDot(destSt)} note="" />
-                    <MarketRow label="Buyer/Seller chatter" context="Fan buzz vs. reporter intel"   statusText={sentSt} dotColor={marketDot(sentSt)} note={validation.sentiment_discounted ? "Fan buzz only · not a credibility signal" : ""} last />
+                    <MarketRow label="National media"       context="ESPN, Athletic, MLB.com"    statusText={natSt}  dotColor={marketDot(natSt)}  note={natNote} />
+                    <MarketRow label="Selling market"       context={origCtx}                    statusText={origSt} dotColor={marketDot(origSt)} note="" />
+                    <MarketRow label="Buying market"        context={destCtx}                    statusText={destSt} dotColor={marketDot(destSt)} note="" />
+                    <MarketRow label="Buyer/Seller chatter" context="Fan buzz vs. reporter intel" statusText={sentSt} dotColor={marketDot(sentSt)} note={validation.sentiment_discounted ? "Fan buzz only · not a credibility signal" : ""} last />
                   </>
                 );
               })()}
@@ -457,8 +449,17 @@ export default function BirdDogExpress() {
           </div>
 
           {Object.keys(teamRecords).length > 0 && (() => {
-            const allText = [validation.summary, validation.origin_market, validation.destination_market].join(" ").toLowerCase();
-            const found   = MLB_TEAMS.filter(t => allText.includes(t)).map(t => teamRecords[t]).filter(Boolean).filter((v,i,a) => a.findIndex(x => x.fullName === v.fullName) === i);
+            const suitorTeams = [
+              ...(validation.potential_suitors || []).map(s => s.team?.toLowerCase() || ""),
+              validation.darkhorse?.team?.toLowerCase() || "",
+            ].filter(Boolean);
+            const allText = [
+              validation.summary,
+              validation.origin_market,
+              validation.destination_market,
+              ...suitorTeams,
+            ].join(" ").toLowerCase();
+            const found = MLB_TEAMS.filter(t => allText.includes(t)).map(t => teamRecords[t]).filter(Boolean).filter((v,i,a) => a.findIndex(x => x.fullName === v.fullName) === i);
             if (!found.length) return null;
             return (
               <Panel>
@@ -475,33 +476,41 @@ export default function BirdDogExpress() {
             );
           })()}
 
-          {validation.fit_analysis && (
-            <Panel>
-              <SectionHeading>Player Fit</SectionHeading>
-              <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, ...mono, tableLayout: "fixed" }}>
-                  <thead>
-                    <tr>
-                      <th scope="col" style={{ textAlign: "left", paddingBottom: 8, fontWeight: 400, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", width: "30%" }}>Category</th>
-                      <th scope="col" style={{ textAlign: "left", paddingBottom: 8, fontWeight: 400, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888" }}>Finding</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {[["Roster","roster"],["Financial","financial"],["Strategic","strategic"],["GM / Front office","gm_profile"]].map(([lbl,key],i) => {
-                      const val = validation.fit_analysis[key];
-                      if (!val || val === "—") return null;
-                      return (
-                        <tr key={key} style={{ borderTop: i === 0 ? "none" : "0.5px solid #f3f4f6" }}>
-                          <th scope="row" style={{ padding: "8px 0", color: "#111", verticalAlign: "top", fontWeight: 500, textAlign: "left" }}>{lbl}</th>
-                          <td style={{ padding: "8px 0", color: "#555", lineHeight: 1.7 }}>{val}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </Panel>
-          )}
+          {validation.fit_analysis && (() => {
+            const ERROR_MSG = "BirdDog lost the scent mid-trail. One rumor at a time keeps BirdDog focused.";
+            const hasContent = ["roster","financial","strategic","gm_profile"].some(k => {
+              const v = validation.fit_analysis[k];
+              return v && v !== "—" && v !== ERROR_MSG;
+            });
+            if (!hasContent) return null;
+            return (
+              <Panel>
+                <SectionHeading>Player Fit</SectionHeading>
+                <div style={{ overflowX: "auto" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, ...mono, tableLayout: "fixed" }}>
+                    <thead>
+                      <tr>
+                        <th scope="col" style={{ textAlign: "left", paddingBottom: 8, fontWeight: 400, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", width: "30%" }}>Category</th>
+                        <th scope="col" style={{ textAlign: "left", paddingBottom: 8, fontWeight: 400, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888" }}>Finding</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[["Roster","roster"],["Financial","financial"],["Strategic","strategic"],["GM / Front office","gm_profile"]].map(([lbl,key],i) => {
+                        const val = validation.fit_analysis[key];
+                        if (!val || val === "—" || val === ERROR_MSG) return null;
+                        return (
+                          <tr key={key} style={{ borderTop: i === 0 ? "none" : "0.5px solid #f3f4f6" }}>
+                            <th scope="row" style={{ padding: "8px 0", color: "#111", verticalAlign: "top", fontWeight: 500, textAlign: "left" }}>{lbl}</th>
+                            <td style={{ padding: "8px 0", color: "#555", lineHeight: 1.7 }}>{val}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </Panel>
+            );
+          })()}
 
           {/* Who Else Might Be Sniffing Around */}
           {(validation.potential_suitors?.length > 0 || validation.darkhorse?.team) ? (
@@ -538,10 +547,12 @@ export default function BirdDogExpress() {
             </Panel>
           )}
 
-          <Panel>
-            <SectionHeading>How We Called It</SectionHeading>
-            <p style={{ fontSize: 13, lineHeight: 1.75, color: "#444", margin: 0 }}>{validation.reasoning}</p>
-          </Panel>
+          {validation.reasoning && validation.reasoning !== "BirdDog lost the scent mid-trail. One rumor at a time keeps BirdDog focused." && (
+            <Panel>
+              <SectionHeading>How We Called It</SectionHeading>
+              <p style={{ fontSize: 13, lineHeight: 1.75, color: "#444", margin: 0 }}>{validation.reasoning}</p>
+            </Panel>
+          )}
 
           {!wide && (
             <button onClick={reset} style={{ ...btnBase, background: "transparent", border: "0.5px solid #e5e7eb", color: "#777", alignSelf: "flex-start" }}>
