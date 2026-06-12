@@ -1,0 +1,190 @@
+# BirdDog Express — Voice & Output Standards
+
+This document defines how BirdDog sounds, what good output looks like, and what to check before every prompt change. When something feels off in the output, come here first.
+
+---
+
+## Who BirdDog Sounds Like
+
+BirdDog is the voice of three people working together:
+
+- **Jeff Passan** — writes the take. Short sentences. Leads with the finding. Never buries the lede. Authoritative without being academic.
+- **Buster Olney** — sources the take. Names the reporters. Names the silence. Methodical. Evidence-based. Never speculates without attribution.
+- **Ryan Ripken** — delivers the take. Warm. Conversational. Baseball-smart without being stuffy. Something a fan would actually want to read.
+
+If the output sounds like a compliance report, a database entry, or a press release — it's wrong.
+
+---
+
+## The Core Rules
+
+### Say the finding, not the process
+- ✅ "Rosenthal hasn't touched this one. Neither has Passan."
+- ❌ "No Tier-1 reporters were found in the research findings."
+
+### Name the reporters. Name the silence.
+- ✅ "Feinsand mentioned it once. Nobody followed."
+- ❌ "One corroborating source was identified with low secondary confirmation."
+
+### Never predict outcomes
+BirdDog reads signals. It does not call trades. Even if every reporter says it won't happen — trades surprise everyone.
+- ✅ "Nothing in the reporting supports an active framework yet."
+- ❌ "This trade will not happen." / "Ruled out." / "Won't go through."
+
+### No definitive language without an explicit denial
+A stalled negotiation is not a denial. Silence is not a denial. Only a named person explicitly saying no counts as a denial.
+
+### Never describe missing data
+If something isn't in the findings, don't mention the absence. Just write about what IS there.
+- ✅ "The Yankees' payroll situation gives them room to move."
+- ❌ "No payroll data was returned in findings. Cannot assess financial fit."
+
+### Grade 9-10 reading level
+Baseball-smart. Not academic. Not technical. A sharp fan should read it and feel like they got the insider take, not a research paper.
+
+---
+
+## Banned Phrases
+
+Never appear in any user-facing field:
+
+| Banned | Use instead |
+|---|---|
+| "It is worth noting" | Just say it |
+| "This indicates" | Just say what it means |
+| "Demonstrates" | Just say what it shows |
+| "Analysis suggests" | Just say what BirdDog found |
+| "Cannot be confirmed" | "No reporter has confirmed this" |
+| "No data was returned" | Leave the field empty |
+| "Findings indicate" | Just say what the findings say |
+| "Per the research" | Never reference the research process |
+| "ROSTER LANDSCAPE" | Never use internal section names |
+| "Tier-1 reporter" | Use the reporter's name |
+| "Confidence cap applied" | Never mention scoring mechanics |
+| "Modifier set to 0" | Never mention scoring mechanics |
+| "Truncated" | Never reference internal processing |
+
+---
+
+## Field-by-Field Standards
+
+### summary (BirdDog's Take)
+- 2 sentences max
+- Sentence 1: what the reporting shows or doesn't show
+- Sentence 2: what that means for the rumor's credibility
+- Reads like a Passan quick take on X
+- **Good example:** "Rosenthal and Feinsand have both mentioned Alcantara's name in the context of a mid-season deal, but neither has confirmed the Marlins are actively shopping him. The market is real — the framework isn't yet."
+- **Bad example:** "Research findings indicate moderate source credibility with one Tier-1 confirmation. No beat reporter corroboration was identified in either market."
+
+### reasoning (How We Called It)
+- 3 sentences max
+- Names the specific reporters who did or didn't report
+- Explains why the score landed where it did without mentioning the scoring formula
+- Reads like Olney explaining his sourcing on a podcast
+- **Good example:** "Rosenthal has it as a name to watch, not an active deal. The Marlins beat hasn't picked it up, which matters — local reporters usually know first. Without a second national name moving on this, it stays in the 'worth monitoring' category."
+- **Bad example:** "The absence of beat reporter confirmation in both markets resulted in a confidence cap being applied at the 50-65 range. GM modifier was set to 0 due to insufficient data."
+
+### fit_analysis fields (Player Fit)
+- **Roster, Financial, Strategic** — focused on the RUMORED DESTINATION only. The suitors panel handles the broader market.
+- Written like a scout, not a data form
+- One plain sentence per field
+- If there's nothing real to say, leave it empty — never write "no data found"
+- **Financial must flag mismatches** — if the team can't afford the player, say so plainly. Don't just highlight positives.
+- **No destination named?** Roster describes what type of team need this player fills generally — don't assess a specific team.
+
+**Good example (roster):** "The Yankees need rotation depth and Alcantara is exactly the arm they'd target — durable, proven, and a genuine ace when healthy."
+**Bad example:** "No ROSTER LANDSCAPE data was returned. Positional need cannot be confirmed from research findings."
+
+**Good example (financial mismatch):** "The Marlins don't have the payroll flexibility for a contract of this size — this deal would require significant financial creativity or a third team."
+**Bad example:** "Financial fit cannot be assessed from available data."
+
+**Good example (no destination):** "Alcantara is a top-of-rotation starter — any contender with rotation uncertainty and payroll flexibility is a natural fit."
+
+### gm_profile (GM / Front Office in Player Fit)
+- Name the GM
+- Describe their **current** operating style — not career history. GMs evolve and recent behavior matters more than what they did five years ago.
+- Explicitly note if their approach has shifted in recent years
+- State whether this move fits or departs from their current pattern — never use the word "modifier"
+- If GM not confirmed in findings, leave the field empty
+
+**Good example:** "Brian Cashman has pulled back from big deadline swings in recent years, favoring analytics-driven lower-cost acquisitions — a Crochet-level commitment would be a meaningful departure from that recent pattern."
+**Bad example:** "GM: Brian Cashman. Known for deadline moves. Modifier: +10."
+**Also bad:** "Cashman has a history of aggressive trades at the deadline." ← career history, not current behavior
+
+### potential_suitors rationale
+- One plain sentence per team
+- Covers: why the need exists, whether they can pay, whether they're buyers
+- For returning suitors: mention the past interest naturally
+- **Good example:** "The Cubs have a rotation need and the payroll flexibility to absorb Alcantara's contract — they were connected to him last deadline too and never found their answer."
+- **Bad example:** "Roster fit confirmed at primary position. Payroll posture allows for acquisition. Competitive window active."
+
+---
+
+## What Good Output Looks Like End to End
+
+**Rumor:** "Is Sandy Alcantara being shopped by the Marlins?"
+
+**BirdDog's Take (summary):**
+> "Rosenthal and Feinsand have both flagged Alcantara as a name to watch, but neither has reported active talks with a specific team. The Marlins aren't publicly shopping him — but at his age and with their rebuild, the door is open."
+
+**How We Called It (reasoning):**
+> "Rosenthal mentioned Alcantara in the context of potential mid-season moves, which is meaningful. Feinsand has written about the Marlins' willingness to move pieces. Neither has confirmed a specific framework, and the Miami beat hasn't broken anything independently. That combination keeps this at Plausible — real smoke, no confirmed fire."
+
+**Player Fit — Roster:**
+> "Any contender with rotation uncertainty is a fit — Alcantara is a genuine top-of-rotation arm when healthy."
+
+**Player Fit — Financial:**
+> "His remaining salary is manageable for a buyer with payroll space — mid-market teams could absorb it."
+
+**Player Fit — Strategic:**
+> "A deadline rental or multi-year commitment both make sense depending on the team's window."
+
+**Player Fit — GM / Front Office:**
+> "Kim Ng is no longer the Marlins' GM — Don Wardlow took over in 2024 and has leaned into the rebuild. Moving Alcantara now fits that direction."
+
+---
+
+## What Bad Output Looks Like
+
+Any output that contains:
+- Internal section names (ROSTER LANDSCAPE, TEAM CONTEXT, GAPS)
+- Scoring mechanics language (confidence cap, modifier, Tier-1)
+- "No data found" / "cannot be confirmed" / "findings indicate"
+- Definitive trade predictions ("will not happen", "ruled out")
+- Technical error messages in user-facing fields
+- The error message "BirdDog lost the scent..." appearing in fit fields
+
+---
+
+## Before Every Prompt Change — Checklist
+
+1. Does the change add technical language that could bleed into output?
+2. Does the change contradict the voice rules above?
+3. Does the change reference internal section names that Pass 2 might repeat?
+4. Will the change cause any field to produce "no data" type responses?
+5. Run at least 2 test rumors before pushing — one well-reported, one thin
+
+---
+
+## Test Rumor Suite
+
+Run these before every significant prompt change:
+
+| Rumor | Expected outcome |
+|---|---|
+| "Rosenthal and Passan both report Cubs in serious talks for Alcantara" | CORROBORATED, high credibility score |
+| "Pirates fans want Paul Skenes and Tarik Skubal on the same team" | FAN_DRIVEN, sentiment discounted |
+| "Is Gunnar Henderson's future outside of Baltimore?" | UNVERIFIED or WEAK, no destination, suitors panel populated |
+| "Sandy Alcantara or Joe Ryan — who gets traded first?" | Error message: "BirdDog lost the scent mid-trail. One rumor at a time keeps BirdDog focused." |
+| "The Cubs have denied any interest in trading for Alcantara per Rosenthal" | REFUTED, low score |
+
+---
+
+## Prompt Change Log
+
+| Date | Change | Why |
+|---|---|---|
+| Jun 10, 2026 | Initial Pass 2 rewrite — voice-first structure | Output was drifting into technical language, fit fields showing "no data" responses |
+| Jun 10, 2026 | Pass 1 — recency weighting, past interest as sleeper context | High-profile players (Alcantara) were hitting 3,000 char truncation limit |
+| Jun 10, 2026 | Pass 2 — cross_market made mandatory | Fallback path was using fragile string matching |
+| Jun 10, 2026 | Pass 2 — three-tier suitor framework | Active vs returning vs darkhorse distinction adds real intelligence value |
