@@ -75,7 +75,26 @@ function formatGmProfile(profile, liveRecord) {
   ].join("\n");
 }
 
-// ── User-facing error messages — never expose raw API errors publicly ─────────
+// ── Build full standings summary for Pass 2 — all 30 teams, live records ──────
+// This replaces the vague "MLB STANDINGS DATA: Available" flag so Pass 2 never
+// falls back to training data for any team record.
+function buildStandingsSummary(standingsRes) {
+  if (!standingsRes?.records) return "";
+  const lines = ["LIVE MLB STANDINGS (from MLB Stats API — use these records, never your training data):"];
+  for (const divRecord of standingsRes.records) {
+    const division = divRecord.division?.name || "";
+    lines.push(`\n${division}:`);
+    for (const tr of divRecord.teamRecords || []) {
+      const name = tr.team?.name || "";
+      const wins = tr.wins;
+      const losses = tr.losses;
+      const rank = tr.divisionRank;
+      const gb = tr.gamesBack === "-" ? "—" : tr.gamesBack;
+      lines.push(`  ${name}: ${wins}-${losses}, ${rank}${rank === "1" ? "st" : rank === "2" ? "nd" : rank === "3" ? "rd" : "th"} (${gb} GB)`);
+    }
+  }
+  return lines.join("\n");
+}
 function userFacingError(status, rawMessage) {
   if (status === 429) return { code: "RATE_LIMIT",   message: "The phone lines are jammed. Step away from the hot stove and try again in a bit." };
   if (status === 401) return { code: "AUTH",         message: "Locked out of the front office. Give us a minute." };
@@ -221,32 +240,17 @@ export default async function handler(req, res) {
         "RUMOR CLASSIFICATION (pick one): REPORTER_LED | CORROBORATED | FAN_DRIVEN | NOISE",
         "",
         "GM MODIFIER:",
-        "Find the GM name in the findings. Based on what the findings say about their CURRENT tendencies — not career history:",
-        "A GM's approach can shift over time. Reflect their current operating style, not what they did five years ago.",
-        "If the findings suggest their approach has changed, note the shift plainly.",
+        "A GM profile for the teams involved is provided below in the user message under GM PROFILES FOR TEAMS INVOLVED. Use that profile — do not search the findings for GM tendencies and do not use your training data.",
+        "If no profile is provided for a team, leave the gm_profile field as empty string.",
         "+10 if this move fits their current pattern. 0 if unknown or neutral. -10 if it contradicts their current pattern.",
-        "In the gm_profile field: name the GM, describe their current tendencies in one plain sentence, note if their approach has shifted, and state what the modifier means in plain language — never use the word 'modifier'.",
-        "If the GM name is not in the findings, leave the field empty. Do not guess.",
+        "In the gm_profile field: name the GM, describe their current tendencies in one plain sentence, and state in plain language whether this move fits or contradicts their pattern. Never use the word 'modifier'.",
         "",
         "PLAYER FIT FIELDS — focus on the RUMORED DESTINATION only. Suitors are handled separately.",
         "roster: Does this player fill a real need on THIS team's roster? Name the position. Call out overlap with a current player if it exists. If no destination is named in the rumor, describe what type of team need this player fills — don't assess a specific team.",
         "financial: State the player's contract classification first — RENTAL, CONTROLLABLE, or EXTENSION CANDIDATE — then assess whether THIS team can afford them. A rental and a controllable player have fundamentally different trade value and cost different in prospect return. Never use the word 'controllable' unless Pass 1 explicitly confirmed multiple years of team control. Be honest about mismatches — if the numbers or the contract type don't work, say so plainly.",
         "strategic: Does this move fit where THIS team is headed right now? Factor in the contract type — a rental is a one-postseason bet, a controllable player is a franchise asset, an extension candidate is both. State which one this is and whether it fits the team's window.",
-        "gm_profile: GM name, current operating style in one sentence, whether this move fits or departs from that style. Use the GM profile provided in the user message — do not use training data. Sound like an insider who follows this team closely.",
+        "gm_profile: Use the injected GM profile — name the GM, their current operating style in one sentence, whether this move fits or contradicts that style.",
         "If you don't have enough from the findings to write a real sentence for any field, leave it as empty string. Never write 'no data found' or describe what's missing.",
-        "",
-        "POTENTIAL SUITORS:",
-        "Use only what the findings say about current rosters and team needs. Do not use your training data for who plays where — it is outdated.",
-        "Assess against the player's PRIMARY position first. Only consider a secondary position if the findings explicitly confirm the player has played it AND there's a reason the acquiring team would use them there.",
-        "For each suitor, write one plain sentence: what's the need, can they pay, are they in a window to buy.",
-        "Name one darkhorse — a team that isn't obvious but has a real case based on the findings.",
-        "If the findings don't give enough roster context to name real suitors, return empty array and null darkhorse.",
-        "",
-        "sources_found: List each source as exactly 'Firstname Lastname - Outlet - Date' with no variation. If date is unknown use the year. Max 5 sources. Only include named reporters — no aggregators.",
-        "",
-        "cross_market: Always return this object — never null or missing. Use CONFIRMED if the market has clear reporting, PARTIAL if mentioned but not confirmed, SILENT if nothing found.",
-        "For reporters_count and of_total in national_media — count only Tier 1 and Tier 2 reporters, not aggregators.",
-        "For outlet in origin_beat and destination_beat — name the actual local outlet if found, otherwise write 'Local coverage'.",
         "",
         "POTENTIAL SUITORS — three tiers, keep it simple:",
         "Active: teams with current reporting or confirmed interest from the last 60 days.",
@@ -256,8 +260,14 @@ export default async function handler(req, res) {
         "Assess against primary position first. Secondary position only if findings confirm it.",
         "If findings don't support naming suitors, return empty array and null darkhorse.",
         "",
+        "sources_found: List each source as exactly 'Firstname Lastname - Outlet - Date' with no variation. If date is unknown use the year. Max 5 sources. Only include named reporters — no aggregators.",
+        "",
+        "cross_market: Always return this object — never null or missing. Use CONFIRMED if the market has clear reporting, PARTIAL if mentioned but not confirmed, SILENT if nothing found.",
+        "For reporters_count and of_total in national_media — count only Tier 1 and Tier 2 reporters, not aggregators.",
+        "For outlet in origin_beat and destination_beat — name the actual local outlet if found, otherwise write 'Local coverage'.",
+        "",
         "Return ONLY raw JSON, no markdown, no backticks:",
-        '{"verdict":"CORROBORATED|PLAUSIBLE|WEAK|REFUTED|UNVERIFIED","rumor_classification":"REPORTER_LED|CORROBORATED|FAN_DRIVEN|NOISE","sentiment_discounted":true,"credibility_score":0,"fit_score":0,"sentiment_score":0,"overall_likelihood":0,"sources_found":["Byline - Outlet - Date"],"origin_market":"1 sentence from findings","destination_market":"1 sentence from findings","national":"1 sentence from findings","cross_market":{"national_media":{"status":"PARTIAL|CONFIRMED|SILENT","reporters_count":0,"of_total":3},"origin_beat":{"status":"CONFIRMED|SILENT","outlet":""},"destination_beat":{"status":"CONFIRMED|SILENT","outlet":""}},"summary":"2 sentences. Lead with the verdict. Sound like Passan.","fit_analysis":{"roster":"1 plain sentence or empty string","financial":"1 plain sentence or empty string","strategic":"1 plain sentence or empty string","gm_profile":"GM name, one-sentence tendency, modifier or empty string"},"reasoning":"3 sentences. Name the reporters. Sound like Olney.","potential_suitors":[{"team":"Team Name","rationale":"1 plain sentence"},{"team":"Team Name","rationale":"1 plain sentence"}],"darkhorse":{"team":"Team Name","rationale":"1 plain sentence"},"darkhorse_note":"only if suitors empty","qc_footer":"QC: Markets Y/N | Tiers Y/N | Dates Y/N | GM Y/N | Caps Y/N"}',
+        '{"verdict":"CORROBORATED|PLAUSIBLE|WEAK|REFUTED|UNVERIFIED","rumor_classification":"REPORTER_LED|CORROBORATED|FAN_DRIVEN|NOISE","sentiment_discounted":true,"credibility_score":0,"fit_score":0,"sentiment_score":0,"overall_likelihood":0,"sources_found":["Firstname Lastname - Outlet - Date"],"origin_market":"1 sentence from findings","destination_market":"1 sentence from findings","national":"1 sentence from findings","cross_market":{"national_media":{"status":"PARTIAL|CONFIRMED|SILENT","reporters_count":0,"of_total":3},"origin_beat":{"status":"CONFIRMED|SILENT","outlet":""},"destination_beat":{"status":"CONFIRMED|SILENT","outlet":""}},"summary":"2 sentences. Lead with the verdict. Sound like Passan.","fit_analysis":{"roster":"1 plain sentence or empty string","financial":"Contract classification first, then affordability assessment. 1 plain sentence or empty string.","strategic":"1 plain sentence factoring contract type or empty string","gm_profile":"GM name, current style, fits or contradicts — or empty string"},"reasoning":"3 sentences. Name the reporters. Sound like Olney.","potential_suitors":[{"team":"Team Name","rationale":"1 plain sentence"},{"team":"Team Name","rationale":"1 plain sentence"}],"darkhorse":{"team":"Team Name","rationale":"1 plain sentence"},"darkhorse_note":"only if suitors empty"}',
       ].join("\n"),
       cache_control: { type: "ephemeral" },
     },
@@ -333,6 +343,8 @@ export default async function handler(req, res) {
         ].join("\n\n")
       : "";
 
+    const standingsSummary = buildStandingsSummary(standingsRes);
+
     const analysisUserMsg = [
       `Rumor: "${rumor}"`,
       "",
@@ -341,7 +353,7 @@ export default async function handler(req, res) {
       "",
       gmProfileSection,
       "",
-      standingsRes ? "MLB STANDINGS DATA: Available (use for fit analysis)." : "",
+      standingsSummary,
       "",
       "Return the raw JSON verdict.",
     ].join("\n");
