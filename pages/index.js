@@ -1,6 +1,7 @@
 // pages/index.js
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Analytics } from "@vercel/analytics/react";
+import { FIT_FALLBACK, INCOMPLETE_FINDINGS_MSG } from "../lib/constants.js";
 
 const VERDICT_CONFIG = {
   CORROBORATED: { label: "Corroborated",         color: "#3B6D11", bg: "#EAF3DE", border: "#639922" },
@@ -477,10 +478,9 @@ export default function BirdDogExpress() {
           })()}
 
           {validation.fit_analysis && (() => {
-            const ERROR_MSG = "BirdDog lost the scent mid-trail. One rumor at a time keeps BirdDog focused.";
             const hasContent = ["roster","financial","strategic","gm_profile"].some(k => {
               const v = validation.fit_analysis[k];
-              return v && v !== "—" && v !== ERROR_MSG;
+              return v && v !== "—" && v !== INCOMPLETE_FINDINGS_MSG;
             });
             if (!hasContent) return null;
             return (
@@ -497,11 +497,13 @@ export default function BirdDogExpress() {
                     <tbody>
                       {[["Roster","roster"],["Financial","financial"],["Strategic","strategic"],["GM / Front office","gm_profile"]].map(([lbl,key],i) => {
                         const val = validation.fit_analysis[key];
-                        if (!val || val === "—" || val === ERROR_MSG) return null;
+                        // Show fallback phrases — only hide truly empty or global error message
+                        if (!val || val === "—" || val === INCOMPLETE_FINDINGS_MSG) return null;
+                        const isFallback = Object.values(FIT_FALLBACK).includes(val);
                         return (
                           <tr key={key} style={{ borderTop: i === 0 ? "none" : "0.5px solid #f3f4f6" }}>
                             <th scope="row" style={{ padding: "8px 0", color: "#111", verticalAlign: "top", fontWeight: 500, textAlign: "left" }}>{lbl}</th>
-                            <td style={{ padding: "8px 0", color: "#555", lineHeight: 1.7 }}>{val}</td>
+                            <td style={{ padding: "8px 0", color: isFallback ? "#999" : "#555", lineHeight: 1.7, fontStyle: isFallback ? "italic" : "normal" }}>{val}</td>
                           </tr>
                         );
                       })}
@@ -540,14 +542,14 @@ export default function BirdDogExpress() {
                 )}
               </div>
             </Panel>
-          ) : validation.potential_suitors !== undefined && (
+          ) : (validation.potential_suitors !== undefined && validation.potential_suitors !== null) && (
             <Panel>
               <SectionHeading>Who Else Might Be Sniffing Around</SectionHeading>
               <p style={{ fontSize: 13, color: "#999", margin: 0 }}>BirdDog hasn't picked up a scent on this one...yet.</p>
             </Panel>
           )}
 
-          {validation.reasoning && validation.reasoning !== "BirdDog lost the scent mid-trail. One rumor at a time keeps BirdDog focused." && (
+          {validation.reasoning && validation.reasoning !== INCOMPLETE_FINDINGS_MSG && (
             <Panel>
               <SectionHeading>How We Called It</SectionHeading>
               <p style={{ fontSize: 13, lineHeight: 1.75, color: "#444", margin: 0 }}>{validation.reasoning}</p>
