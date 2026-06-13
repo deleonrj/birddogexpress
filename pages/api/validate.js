@@ -3,6 +3,7 @@
 // Prompt caching enabled on both passes for performance
 
 import gmProfiles from "../../gm-profiles.json";
+import { FIT_FALLBACK, INCOMPLETE_FINDINGS_MSG } from "../../lib/constants.js";
 
 export const config = {
   api: { responseLimit: false },
@@ -26,72 +27,59 @@ function getGmProfiles(rumor, findings) {
 }
 
 // ── Extract player name from free-text rumor ──────────────────────────────────
-// Looks for known patterns: "Is [Name]", "[Name] to the", "[Name] trade", etc.
 // Returns best guess at player name or null if not found.
 function extractPlayerName(rumor) {
   const text = rumor.trim();
-
-  // Pattern 1: "Is [Firstname Lastname]" or "Will [Firstname Lastname]"
   const p1 = text.match(/^(?:is|will|could|would|should|can)\s+([A-Z][a-záéíóúñü]+(?:\s+[A-Z][a-záéíóúñü]+){1,2})/i);
   if (p1) return p1[1].trim();
-
-  // Pattern 2: "[Name] to the [Team]" or "[Name] trade" or "[Name] available"
   const p2 = text.match(/^([A-Z][a-záéíóúñü]+(?:\s+[A-Z][a-záéíóúñü]+){1,2})\s+(?:to\s+the|trade|available|being|possibly|could|rumor|linked)/i);
   if (p2) return p2[1].trim();
-
-  // Pattern 3: "about [Name]" or "for [Name]"
   const p3 = text.match(/(?:about|for|acquire|targeting|pursuing|interested\s+in)\s+([A-Z][a-záéíóúñü]+(?:\s+[A-Z][a-záéíóúñü]+){1,2})/i);
   if (p3) return p3[1].trim();
-
-  // Pattern 4: Any capitalized two-word name sequence
   const p4 = text.match(/([A-Z][a-z]+\s+[A-Z][a-z]+)/);
   if (p4) return p4[1].trim();
-
   return null;
 }
 
-// ── Fetch contract status from MLB Stats API ──────────────────────────────────
-// Step 1: Name search → get player ID
-// Step 2: Player details → get service time, arb status, contract years
-// Returns structured contract status string or null on failure
-async function fetchContractStatus(playerName) {
+// ── Step 1: Resolve player ID from name ───────────────────────────────────────
+// Separated from contract/stats fetch so the ID can be reused for both.
+async function resolvePlayerId(playerName) {
   if (!playerName) return null;
   try {
-    // Step 1: Search for player by name
-    const searchUrl = `https://statsapi.mlb.com/api/v1/people/search?names=${encodeURIComponent(playerName)}&sportIds=1`;
-    const searchRes = await fetch(searchUrl);
-    if (!searchRes.ok) return null;
-    const searchData = await searchRes.json();
-
-    const people = searchData?.people;
+    const url = `https://statsapi.mlb.com/api/v1/people/search?names=${encodeURIComponent(playerName)}&sportIds=1`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const people = data?.people;
     if (!people?.length) return null;
-
-    // Pick the active player with the closest name match
     const player = people.find(p => p.active) || people[0];
-    const playerId = player?.id;
-    if (!playerId) return null;
+    return player?.id || null;
+  } catch (err) {
+    console.error("BirdDog player ID resolve error:", err.message);
+    return null;
+  }
+}
 
-    // Step 2: Get player details with service time and contract info
-    const detailUrl = `https://statsapi.mlb.com/api/v1/people/${playerId}?hydrate=currentContract,stats(type=career,sportId=1)`;
-    const detailRes = await fetch(detailUrl);
-    if (!detailRes.ok) return null;
-    const detailData = await detailRes.json();
-
-    const person = detailData?.people?.[0];
+// ── Step 2a: Fetch contract status using resolved player ID ───────────────────
+async function fetchContractStatus(playerId) {
+  if (!playerId) return null;
+  try {
+    const url = `https://statsapi.mlb.com/api/v1/people/${playerId}?hydrate=currentContract`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const person = data?.people?.[0];
     if (!person) return null;
 
-    // Extract service time
     const serviceTime = person.mlbDebutDate
       ? Math.floor((new Date() - new Date(person.mlbDebutDate)) / (365.25 * 24 * 60 * 60 * 1000))
       : null;
 
-    // Extract contract details
     const contract = person.currentContract;
     const contractEnd = contract?.endDate ? new Date(contract.endDate).getFullYear() : null;
     const currentYear = new Date().getFullYear();
 
-    // Determine arb status from service time
-    // MLB arb rules: eligible after 3 years service (or Super Two: top 22% between 2-3 years)
+    // Arb status from service time (MLB rule: 3 years service for arb eligibility)
     let arbStatus = null;
     if (serviceTime !== null) {
       if (serviceTime < 3) arbStatus = "pre-arb";
@@ -101,31 +89,111 @@ async function fetchContractStatus(playerName) {
       }
     }
 
-    // Build contract status string
     if (contractEnd) {
       const yearsRemaining = contractEnd - currentYear;
       if (yearsRemaining <= 0) {
         return `RENTAL — contract expires after ${currentYear} season`;
       } else if (yearsRemaining === 1) {
-        return `CONTROLLABLE — 1 year remaining on contract (through ${contractEnd})${arbStatus ? `, ${arbStatus}` : ""}`;
+        return `CONTROLLABLE — 1 year remaining (through ${contractEnd})${arbStatus ? `, ${arbStatus}` : ""}`;
       } else {
-        return `CONTROLLABLE — ${yearsRemaining} years remaining on contract (through ${contractEnd})${arbStatus ? `, ${arbStatus}` : ""}`;
+        return `CONTROLLABLE — ${yearsRemaining} years remaining (through ${contractEnd})${arbStatus ? `, ${arbStatus}` : ""}`;
       }
     }
 
-    // No contract end date — use service time to infer
     if (arbStatus) {
       return `CONTROLLABLE — ${arbStatus} (service time: ~${serviceTime} years)`;
     }
 
     return null;
   } catch (err) {
-    console.error("BirdDog contract lookup error:", err.message);
+    console.error("BirdDog contract fetch error:", err.message);
     return null;
   }
 }
 
-// ── Format contract status for Pass 2 injection ───────────────────────────────
+// ── Step 2b: Fetch player stats using resolved player ID ──────────────────────
+// Position players: AVG/OBP/SLG/OPS + LHP/RHP splits + HR/RBI/SB + career OPS
+// Pitchers: ERA/WHIP/K9/BB9/IP + LHB/RHB splits + career ERA
+async function fetchPlayerStats(playerId, currentYear) {
+  if (!playerId) return null;
+  try {
+    // Fetch current season stats + career stats + current season splits
+    const [seasonRes, splitsRes] = await Promise.all([
+      fetch(`https://statsapi.mlb.com/api/v1/people/${playerId}?hydrate=stats(group=[hitting,pitching],type=[season,career],season=${currentYear},sportId=1)`),
+      fetch(`https://statsapi.mlb.com/api/v1/people/${playerId}/stats?stats=statSplits&season=${currentYear}&sportId=1&group=hitting,pitching`),
+    ]);
+
+    if (!seasonRes.ok) return null;
+    const seasonData = await seasonRes.json();
+    const person = seasonData?.people?.[0];
+    if (!person) return null;
+
+    const allStats = person.stats || [];
+
+    // Determine pitcher vs. position player from primary position
+    const primaryPos = person.primaryPosition?.abbreviation || "";
+    const isPitcher = ["P", "SP", "RP", "CL"].includes(primaryPos);
+
+    // Extract season and career stat groups
+    const findStats = (group, type) =>
+      allStats.find(s => s.group?.displayName === group && s.type?.displayName === type)?.splits?.[0]?.stat || null;
+
+    const seasonHitting  = findStats("hitting",  "season");
+    const careerHitting  = findStats("hitting",  "career");
+    const seasonPitching = findStats("pitching", "season");
+    const careerPitching = findStats("pitching", "career");
+
+    // Parse splits if available
+    let splitsData = null;
+    if (splitsRes.ok) {
+      try {
+        const sd = await splitsRes.json();
+        splitsData = sd?.stats || null;
+      } catch (splitErr) {
+        console.error("BirdDog splits parse error:", splitErr.message);
+      }
+    }
+
+    const findSplit = (group, splitCode) => {
+      if (!splitsData) return null;
+      const group_ = splitsData.find(s => s.group?.displayName === group);
+      return group_?.splits?.find(s => s.split?.code === splitCode)?.stat || null;
+    };
+
+    if (isPitcher && seasonPitching) {
+      const vsLHB = findSplit("pitching", "vl");
+      const vsRHB = findSplit("pitching", "vr");
+      const lines = [
+        `Position: ${primaryPos} (Pitcher)`,
+        `${currentYear}: ERA ${seasonPitching.era || "—"} | WHIP ${seasonPitching.whip || "—"} | K/9 ${seasonPitching.strikeoutsPer9Inn || "—"} | BB/9 ${seasonPitching.walksPer9Inn || "—"} | IP ${seasonPitching.inningsPitched || "—"}`,
+        careerPitching ? `Career ERA: ${careerPitching.era || "—"}` : "",
+        vsLHB ? `vs LHB: OPS ${vsLHB.ops || "—"}` : "",
+        vsRHB ? `vs RHB: OPS ${vsRHB.ops || "—"}` : "",
+      ].filter(Boolean);
+      return lines.join("\n");
+    }
+
+    if (!isPitcher && seasonHitting) {
+      const vsLHP = findSplit("hitting", "vl");
+      const vsRHP = findSplit("hitting", "vr");
+      const lines = [
+        `Position: ${primaryPos}`,
+        `${currentYear}: AVG ${seasonHitting.avg || "—"} | OBP ${seasonHitting.obp || "—"} | SLG ${seasonHitting.slg || "—"} | OPS ${seasonHitting.ops || "—"} | HR ${seasonHitting.homeRuns ?? "—"} | RBI ${seasonHitting.rbi ?? "—"} | SB ${seasonHitting.stolenBases ?? "—"}`,
+        careerHitting ? `Career OPS: ${careerHitting.ops || "—"}` : "",
+        vsLHP ? `vs LHP: OPS ${vsLHP.ops || "—"}` : "",
+        vsRHP ? `vs RHP: OPS ${vsRHP.ops || "—"}` : "",
+      ].filter(Boolean);
+      return lines.join("\n");
+    }
+
+    return null;
+  } catch (err) {
+    console.error("BirdDog stats fetch error:", err.message);
+    return null;
+  }
+}
+
+// ── Format contract section for Pass 2 injection ──────────────────────────────
 function formatContractSection(playerName, contractStatus) {
   if (!contractStatus) return "";
   return [
@@ -135,7 +203,19 @@ function formatContractSection(playerName, contractStatus) {
     "Use this classification in the financial field. Do not reclassify based on training data or web search findings.",
   ].join("\n");
 }
-// Accepts the raw MLB Stats API standingsRes response.
+
+// ── Format player stats section for Pass 2 injection ─────────────────────────
+function formatStatsSection(playerName, statsText) {
+  if (!statsText) return "";
+  return [
+    "PLAYER STATS (from MLB Stats API — authoritative, not training data):",
+    `Player: ${playerName}`,
+    statsText,
+    "Use these stats to assess roster fit and player strengths/weaknesses. Do not use training data for player performance.",
+  ].join("\n");
+}
+
+// ── Build live standings lookup keyed by full team name ───────────────────────
 // Returns { "Baltimore Orioles": { wins, losses, divisionRank, gamesBack, division } }
 function buildStandingsLookup(standingsRes) {
   const lookup = {};
@@ -162,14 +242,11 @@ function buildStandingsLookup(standingsRes) {
 function formatGmProfile(profile, liveRecord) {
   const dms = profile.decision_makers.map(d => `${d.name} (${d.title})`).join(", ");
   const patterns = profile.known_patterns.slice(0, 3).join("; ");
-
-  // Live record line — only from API, never from profile JSON
   const recordLine = liveRecord
     ? `Current record (LIVE): ${liveRecord.wins}-${liveRecord.losses}, ` +
       `${liveRecord.divisionRank === "1" ? "1st" : liveRecord.divisionRank === "2" ? "2nd" : liveRecord.divisionRank === "3" ? "3rd" : liveRecord.divisionRank + "th"} in ${liveRecord.division}` +
       (parseFloat(liveRecord.gamesBack) > 0 ? `, ${liveRecord.gamesBack} GB` : ", division leader")
     : "Current record: not available";
-
   return [
     `Team: ${profile.team}`,
     recordLine,
@@ -185,8 +262,7 @@ function formatGmProfile(profile, liveRecord) {
 }
 
 // ── Build full standings summary for Pass 2 — all 30 teams, live records ──────
-// This replaces the vague "MLB STANDINGS DATA: Available" flag so Pass 2 never
-// falls back to training data for any team record.
+// Pass 2 never falls back to training data for any team record.
 function buildStandingsSummary(standingsRes) {
   if (!standingsRes?.records) return "";
   const lines = ["LIVE MLB STANDINGS (from MLB Stats API — use these records, never your training data):"];
@@ -195,11 +271,9 @@ function buildStandingsSummary(standingsRes) {
     lines.push(`\n${division}:`);
     for (const tr of divRecord.teamRecords || []) {
       const name = tr.team?.name || "";
-      const wins = tr.wins;
-      const losses = tr.losses;
       const rank = tr.divisionRank;
       const gb = tr.gamesBack === "-" ? "—" : tr.gamesBack;
-      lines.push(`  ${name}: ${wins}-${losses}, ${rank}${rank === "1" ? "st" : rank === "2" ? "nd" : rank === "3" ? "rd" : "th"} (${gb} GB)`);
+      lines.push(`  ${name}: ${tr.wins}-${tr.losses}, ${rank}${rank === "1" ? "st" : rank === "2" ? "nd" : rank === "3" ? "rd" : "th"} (${gb} GB)`);
     }
   }
   return lines.join("\n");
@@ -269,8 +343,6 @@ export default async function handler(req, res) {
   };
 
   // ── PASS 1 system prompt — structured for caching ─────────────────────────
-  // The static rules are marked cacheable. Today's date is appended as a
-  // separate non-cached block so it doesn't bust the cache daily.
   const searchSystemPrompt = [
     {
       type: "text",
@@ -316,17 +388,23 @@ export default async function handler(req, res) {
         "",
         "YOUR VOICE:",
         "You sound like Jeff Passan writing a quick take, Buster Olney citing his sources, and Ryan Ripken explaining it to a fan.",
+        "Passan leads — short sentences, authoritative, never buries the lede.",
+        "Olney sources — names the reporters, names the silence, evidence-based.",
+        "Ripken punctuates — one casual, baseball-smart observation per response that lands like a former player reading the room. Never forced. Never every field. When the observation earns it, drop it. When it doesn't, skip it.",
+        "  Good Ripken moments: when silence IS the story ('Nobody who's actually picked up a phone on this has filed anything. That's the tell.'), when fan buzz and reporter silence diverge ('The stands are loud. The press box is quiet. Know the difference.'), when a score lands surprisingly ('That number tells you everything Elias isn't saying publicly.').",
+        "  Bad Ripken moments: routine corroborated rumors where the reporting speaks for itself, tacked on endings just to have one, more than once per response.",
         "Lead with the finding. Say what the reporting shows — or doesn't show.",
         "Name the reporters. Name the outlets. Name the silence when that's the story.",
         "Short sentences. Present tense. No hedging phrases, no academic language.",
-        "Never say: 'it is worth noting', 'this indicates', 'demonstrates', 'aforementioned', 'analysis suggests', 'cannot be confirmed', 'no data was returned', 'findings indicate', 'per the research'.",
+        "Never say: 'it is worth noting', 'this indicates', 'demonstrates', 'aforementioned', 'analysis suggests', 'cannot be confirmed', 'no data was returned', 'findings indicate', 'per the research', 'aggregators'.",
         "Never describe what data is missing — just say what BirdDog found or didn't find.",
         "Never make definitive predictions. No 'will not happen', 'this won't go through', 'ruled out'. Trades surprise everyone. BirdDog reads signals — it doesn't call outcomes.",
+        "Never name specific outlets disparagingly. Say 'roundup sites and analyst columns' not '[Outlet X] is not credible'. BirdDog explains what it didn't find — it doesn't attack what it did.",
         "Grade 9-10 reading level. Baseball-smart, not academic.",
         "",
         "WHAT YOU ARE ANALYZING:",
-        "You will receive research findings from a web search pass. Those findings contain reporter names, outlet names, quotes, standings context, roster notes, and payroll information.",
-        "Analyze ONLY what is in those findings. Do not invent details. Do not use your training data for current roster or contract information — it is outdated.",
+        "You will receive research findings from a web search pass, plus live data from the MLB Stats API (player stats, contract status, standings, GM profiles).",
+        "Analyze ONLY what is in those findings and injected data. Do not invent details. Do not use your training data for player performance, contract status, roster composition, or team records.",
         "If a section of the findings is empty or says nothing was found, reflect that naturally in your writing without mentioning the section name.",
         "",
         "WHEN FINDINGS ARE INCOMPLETE OR THE QUERY COMPARES TWO PLAYERS:",
@@ -344,10 +422,10 @@ export default async function handler(req, res) {
         "  Strongest (near-confirmation): Passan, Rosenthal, Olney, Feinsand, Sammon",
         "  Corroborating but not definitive: Nightengale, Morosi, Murray",
         "  Low weight — known for floating agent trial balloons: Heyman. Heyman alone = WEAK.",
-        "  No weight — treat as noise: Bleacher Report, FanSided roundups, Reddit, ClutchPoints, SI FanNation",
+        "  No weight — treat as noise: Bleacher Report, FanSided roundups, Reddit, ClutchPoints, SI FanNation. When describing low-credibility sourcing in output, say 'roundup sites and analyst columns' — never name specific outlets disparagingly.",
         "  Two or more strongest reporters = CORROBORATED. One strongest alone = PLAUSIBLE.",
         "",
-        "fit_score: how well does this player fit this team's roster, financial situation, and strategic direction?",
+        "fit_score: how well does this player fit this team's roster, financial situation, and strategic direction? Use the injected player stats and GM profile to inform this score.",
         "overall_likelihood: (credibility x 0.6) + (fit x 0.4)",
         "sentiment_score: how much fan buzz exists? High fan buzz with low reporter credibility = FAN_DRIVEN. Discount from overall score.",
         "",
@@ -355,17 +433,21 @@ export default async function handler(req, res) {
         "RUMOR CLASSIFICATION (pick one): REPORTER_LED | CORROBORATED | FAN_DRIVEN | NOISE",
         "",
         "GM MODIFIER:",
-        "A GM profile for the teams involved is provided below in the user message under GM PROFILES FOR TEAMS INVOLVED. Use that profile — do not search the findings for GM tendencies and do not use your training data.",
-        "If no profile is provided for a team, leave the gm_profile field as empty string.",
+        "A GM profile for the teams involved is provided in the user message under GM PROFILES FOR TEAMS INVOLVED. Use that profile — do not search the findings for GM tendencies and do not use your training data.",
+        `If no GM profile is provided for a team, write: '${FIT_FALLBACK.gm_profile}'`,
         "+10 if this move fits their current pattern. 0 if unknown or neutral. -10 if it contradicts their current pattern.",
         "In the gm_profile field: name the GM, describe their current tendencies in one plain sentence, and state in plain language whether this move fits or contradicts their pattern. Never use the word 'modifier'.",
         "",
-        "PLAYER FIT FIELDS — focus on the RUMORED DESTINATION only. Suitors are handled separately.",
-        "roster: Does this player fill a real need on THIS team's roster? Name the position. Call out overlap with a current player if it exists. If no destination is named in the rumor, describe what type of team need this player fills — don't assess a specific team.",
-        "financial: The player's contract status is provided above in PLAYER CONTRACT STATUS — use that classification exactly, do not reclassify from training data or web search. State it plainly: 'Ward is a rental' or 'Skubal is controllable with 2 years remaining'. If extension context was found in research findings, upgrade RENTAL to EXTENSION CANDIDATE and explain. Then assess whether THIS team can afford the player. A rental costs fewer prospects than a controllable player. If no contract status was injected, leave this field empty.",
-        "strategic: Does this move fit where THIS team is headed right now? Factor in the contract type — a rental is a one-postseason bet, a controllable player is a franchise asset, an extension candidate is both. State which one this is and whether it fits the team's window.",
-        "gm_profile: Use the injected GM profile — name the GM, their current operating style in one sentence, whether this move fits or contradicts that style.",
-        "If you don't have enough from the findings to write a real sentence for any field, leave it as empty string. Never write 'no data found' or describe what's missing.",
+        "PLAYER FIT FIELDS — write these in BirdDog voice. Focus on the RUMORED DESTINATION only. Suitors are handled separately.",
+        "ALL FOUR FIELDS share the same voice: Passan/Olney/Ripken. No field is clinical, no field is a data form. Sound like a scout who's done the homework.",
+        "",
+        `roster: Use the injected PLAYER STATS to ground this in real numbers. Name the position. State their key strengths and any weaknesses relevant to this specific trade context — use the stats to support the claim, not substitute for it. If the current season differs meaningfully from career norms and the research findings mention it, flag it. If no destination is named, describe what type of team need this player fills and what their profile suits. If stats are unavailable, write: '${FIT_FALLBACK.roster}'`,
+        "",
+        `financial: The player's contract status is in PLAYER CONTRACT STATUS — use that classification exactly, never reclassify from training data. State it plainly first: 'Ward is a rental' or 'Skubal is controllable with 2 arb years remaining'. If extension context was found in research findings, upgrade RENTAL to EXTENSION CANDIDATE and explain. Then assess whether THIS team can afford the player and what that means for the prospect cost. A rental costs fewer prospects than a controllable player. If no contract status is available, write: '${FIT_FALLBACK.financial}'`,
+        "",
+        `strategic: Does this move fit where THIS team is headed right now? Factor in the contract type — a rental is a one-postseason bet, a controllable player is a franchise asset, an extension candidate is both. Factor in their current record from the live standings. If no strategic context is available, write: '${FIT_FALLBACK.strategic}'`,
+        "",
+        `gm_profile: Use the injected GM profile — name the GM, their current operating style in one sentence, whether this move fits or contradicts that style. If no GM profile was injected, write: '${FIT_FALLBACK.gm_profile}'`,
         "",
         "POTENTIAL SUITORS — three tiers, keep it simple:",
         "Active: teams with current reporting or confirmed interest from the last 60 days.",
@@ -375,14 +457,17 @@ export default async function handler(req, res) {
         "Assess against primary position first. Secondary position only if findings confirm it.",
         "If findings don't support naming suitors, return empty array and null darkhorse.",
         "",
-        "sources_found: List each source as exactly 'Firstname Lastname - Outlet - Date' with no variation. If date is unknown use the year. Max 5 sources. Only include named reporters — no aggregators.",
+        "sources_found: List each source as exactly 'Firstname Lastname - Outlet - Date' with no variation. If date is unknown use the year. Max 5 sources. Only include named reporters with bylines — not roundup sites or analyst columns.",
         "",
         "cross_market: Always return this object — never null or missing. Use CONFIRMED if the market has clear reporting, PARTIAL if mentioned but not confirmed, SILENT if nothing found.",
-        "For reporters_count and of_total in national_media — count only Tier 1 and Tier 2 reporters, not aggregators.",
+        "For reporters_count and of_total in national_media — count only Tier 1 and Tier 2 reporters, not roundup sites or analyst columns.",
         "For outlet in origin_beat and destination_beat — name the actual local outlet if found, otherwise write 'Local coverage'.",
         "",
+        "summary: 2 sentences max. Lead with what the reporting shows. Sound like Passan.",
+        "reasoning: 3 sentences max. Name the specific reporters who did or didn't report. Sound like Olney.",
+        "",
         "Return ONLY raw JSON, no markdown, no backticks:",
-        '{"verdict":"CORROBORATED|PLAUSIBLE|WEAK|REFUTED|UNVERIFIED","rumor_classification":"REPORTER_LED|CORROBORATED|FAN_DRIVEN|NOISE","sentiment_discounted":true,"credibility_score":0,"fit_score":0,"sentiment_score":0,"overall_likelihood":0,"sources_found":["Firstname Lastname - Outlet - Date"],"origin_market":"1 sentence from findings","destination_market":"1 sentence from findings","national":"1 sentence from findings","cross_market":{"national_media":{"status":"PARTIAL|CONFIRMED|SILENT","reporters_count":0,"of_total":3},"origin_beat":{"status":"CONFIRMED|SILENT","outlet":""},"destination_beat":{"status":"CONFIRMED|SILENT","outlet":""}},"summary":"2 sentences. Lead with the verdict. Sound like Passan.","fit_analysis":{"roster":"1 plain sentence or empty string","financial":"State contract classification from injected API data, then affordability. Upgrade to extension candidate if extension context found. 1 plain sentence or empty string.","strategic":"1 plain sentence factoring contract type or empty string","gm_profile":"GM name, current style, fits or contradicts — or empty string"},"reasoning":"3 sentences. Name the reporters. Sound like Olney.","potential_suitors":[{"team":"Team Name","rationale":"1 plain sentence"},{"team":"Team Name","rationale":"1 plain sentence"}],"darkhorse":{"team":"Team Name","rationale":"1 plain sentence"},"darkhorse_note":"only if suitors empty"}',
+        '{"verdict":"CORROBORATED|PLAUSIBLE|WEAK|REFUTED|UNVERIFIED","rumor_classification":"REPORTER_LED|CORROBORATED|FAN_DRIVEN|NOISE","sentiment_discounted":true,"credibility_score":0,"fit_score":0,"sentiment_score":0,"overall_likelihood":0,"sources_found":["Firstname Lastname - Outlet - Date"],"origin_market":"1 sentence from findings","destination_market":"1 sentence from findings","national":"1 sentence from findings","cross_market":{"national_media":{"status":"PARTIAL|CONFIRMED|SILENT","reporters_count":0,"of_total":3},"origin_beat":{"status":"CONFIRMED|SILENT","outlet":""},"destination_beat":{"status":"CONFIRMED|SILENT","outlet":""}},"summary":"2 sentences. Lead with the verdict. Sound like Passan.","fit_analysis":{"roster":"Stats-informed strength/weakness assessment or BirdDog fallback phrase","financial":"Contract classification first, then affordability — or BirdDog fallback phrase","strategic":"Contract type + team window assessment — or BirdDog fallback phrase","gm_profile":"GM name, current style, fits or contradicts — or BirdDog fallback phrase"},"reasoning":"3 sentences. Name the reporters. Sound like Olney.","potential_suitors":[{"team":"Team Name","rationale":"1 plain sentence"},{"team":"Team Name","rationale":"1 plain sentence"}],"darkhorse":{"team":"Team Name","rationale":"1 plain sentence"},"darkhorse_note":"only if suitors empty"}',
       ].join("\n"),
       cache_control: { type: "ephemeral" },
     },
@@ -397,11 +482,14 @@ export default async function handler(req, res) {
 
     const searchUserMsg = `Rumor: "${rumor}"\n\nRun the 4 searches now. Return your concise report.`;
 
-    // ── Extract player name for contract API lookup ────────────────────────────
+    // ── Step 1: Extract player name + resolve ID in parallel with Pass 1 start ──
+    // resolvePlayerId is fast (~200ms) and runs alongside Pass 1 (~15-20s)
+    // We kick off Pass 1 immediately, resolve the ID in parallel, then use it
+    // for contract + stats which also complete well before Pass 1 finishes.
     const playerName = extractPlayerName(rumor);
 
-    // ── PARALLEL: Pass 1 + MLB standings + contract status ────────────────────
-    const [searchRes, standingsRes, contractStatus] = await Promise.all([
+    // ── PARALLEL STAGE 1: Pass 1 + standings + player ID resolution ───────────
+    const [searchRes, standingsRes, playerId] = await Promise.all([
       fetchWithRetry("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: anthropicHeaders,
@@ -417,7 +505,14 @@ export default async function handler(req, res) {
       fetch(`https://statsapi.mlb.com/api/v1/standings?leagueId=103,104&season=${thisYear}&standingsTypes=regularSeason`)
         .then(r => r.json())
         .catch(() => null),
-      fetchContractStatus(playerName),
+      resolvePlayerId(playerName),
+    ]);
+
+    // ── PARALLEL STAGE 2: Contract + stats (use resolved player ID) ───────────
+    // These run after Stage 1 but Pass 1 is still processing — no wall time added
+    const [contractStatus, playerStats] = await Promise.all([
+      fetchContractStatus(playerId),
+      fetchPlayerStats(playerId, thisYear),
     ]);
 
     if (!searchRes.ok) {
@@ -451,7 +546,7 @@ export default async function handler(req, res) {
 
     send("status", { message: "Sources scanned. Analyzing..." });
 
-    // ── PASS 2: Streaming analysis ─────────────────────────────────────────────
+    // ── PASS 2: Assemble context and stream analysis ───────────────────────────
     const standingsLookup = buildStandingsLookup(standingsRes);
     const matchedProfiles = getGmProfiles(rumor, researchFindings);
     const gmProfileSection = matchedProfiles.length > 0
@@ -462,8 +557,9 @@ export default async function handler(req, res) {
         ].join("\n\n")
       : "";
 
-    const standingsSummary = buildStandingsSummary(standingsRes);
-    const contractSection = formatContractSection(playerName, contractStatus);
+    const standingsSummary  = buildStandingsSummary(standingsRes);
+    const contractSection   = formatContractSection(playerName, contractStatus);
+    const statsSection      = formatStatsSection(playerName, playerStats);
 
     const analysisUserMsg = [
       `Rumor: "${rumor}"`,
@@ -472,6 +568,8 @@ export default async function handler(req, res) {
       researchFindings,
       "",
       contractSection,
+      "",
+      statsSection,
       "",
       gmProfileSection,
       "",
@@ -485,7 +583,7 @@ export default async function handler(req, res) {
       headers: anthropicHeaders,
       body: JSON.stringify({
         model: "claude-sonnet-4-6",
-        max_tokens: 1500,
+        max_tokens: 1800,
         system: analysisSystemPrompt,
         stream: true,
         messages: [{ role: "user", content: analysisUserMsg }],
