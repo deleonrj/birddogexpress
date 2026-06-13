@@ -8,34 +8,70 @@ export const config = {
   api: { responseLimit: false },
 };
 
-// ── GM profile lookup — matches team names found in rumor/findings to profiles ─
+// ── GM profile lookup — matches team names in rumor/findings to profiles ──────
 function getGmProfiles(rumor, findings) {
   const text = (rumor + " " + findings).toLowerCase();
   const matched = gmProfiles.teams.filter(team => {
     const teamLower = team.team.toLowerCase();
-    // Match full team name or city name
-    const city = teamLower.split(" ").slice(0, -1).join(" "); // e.g. "new york" from "new york yankees"
-    const nickname = teamLower.split(" ").pop(); // e.g. "yankees"
-    return text.includes(teamLower) || text.includes(nickname) || (city.length > 3 && text.includes(city));
+    const parts = teamLower.split(" ");
+    const nickname = parts[parts.length - 1];
+    const city = parts.slice(0, -1).join(" ");
+    return (
+      text.includes(teamLower) ||
+      (nickname.length > 3 && text.includes(nickname)) ||
+      (city.length > 3 && text.includes(city))
+    );
   });
-  // Cap at 3 teams to avoid token bloat
   return matched.slice(0, 3);
 }
 
-// ── Format GM profile for injection into Pass 2 user message ─────────────────
-function formatGmProfile(profile) {
+// ── Build live standings lookup keyed by full team name ───────────────────────
+// Accepts the raw MLB Stats API standingsRes response.
+// Returns { "Baltimore Orioles": { wins, losses, divisionRank, gamesBack, division } }
+function buildStandingsLookup(standingsRes) {
+  const lookup = {};
+  if (!standingsRes?.records) return lookup;
+  for (const divRecord of standingsRes.records) {
+    const division = divRecord.division?.name || "";
+    for (const tr of divRecord.teamRecords || []) {
+      const name = tr.team?.name;
+      if (!name) continue;
+      lookup[name] = {
+        wins: tr.wins,
+        losses: tr.losses,
+        divisionRank: tr.divisionRank,
+        gamesBack: tr.gamesBack === "-" ? "0" : (tr.gamesBack || "0"),
+        division,
+      };
+    }
+  }
+  return lookup;
+}
+
+// ── Format GM profile with live record injected at runtime ────────────────────
+// liveRecord comes from buildStandingsLookup — never stored in gm-profiles.json
+function formatGmProfile(profile, liveRecord) {
   const dms = profile.decision_makers.map(d => `${d.name} (${d.title})`).join(", ");
   const patterns = profile.known_patterns.slice(0, 3).join("; ");
+
+  // Live record line — only from API, never from profile JSON
+  const recordLine = liveRecord
+    ? `Current record (LIVE): ${liveRecord.wins}-${liveRecord.losses}, ` +
+      `${liveRecord.divisionRank === "1" ? "1st" : liveRecord.divisionRank === "2" ? "2nd" : liveRecord.divisionRank === "3" ? "3rd" : liveRecord.divisionRank + "th"} in ${liveRecord.division}` +
+      (parseFloat(liveRecord.gamesBack) > 0 ? `, ${liveRecord.gamesBack} GB` : ", division leader")
+    : "Current record: not available";
+
   return [
     `Team: ${profile.team}`,
+    recordLine,
     `Decision makers: ${dms}`,
-    `Current mode: ${profile.current_mode}`,
+    `Operating mode: ${profile.current_mode}`,
     `Trade style: ${profile.trade_style}`,
     `Prospect protection: ${profile.prospect_protection}`,
     `Known patterns: ${patterns}`,
     `Recent shifts: ${profile.recent_shifts}`,
-    `Fits: ${profile.default_modifier.fits}`,
-    `Contradicts: ${profile.default_modifier.contradicts}`,
+    `Fits this GM: ${profile.default_modifier.fits}`,
+    `Contradicts this GM: ${profile.default_modifier.contradicts}`,
   ].join("\n");
 }
 
@@ -287,13 +323,14 @@ export default async function handler(req, res) {
     send("status", { message: "Sources scanned. Analyzing..." });
 
     // ── PASS 2: Streaming analysis ─────────────────────────────────────────────
+    const standingsLookup = buildStandingsLookup(standingsRes);
     const matchedProfiles = getGmProfiles(rumor, researchFindings);
     const gmProfileSection = matchedProfiles.length > 0
       ? [
-          "GM PROFILES FOR TEAMS INVOLVED:",
-          ...matchedProfiles.map(p => formatGmProfile(p)),
-          "Use these profiles to assess whether this move fits or contradicts each GM's current operating style. Do not use your training data for GM behavior — use only what is in these profiles.",
-        ].join("\n")
+          "GM PROFILES FOR TEAMS INVOLVED (records are live from MLB Stats API — not cached):",
+          ...matchedProfiles.map(p => formatGmProfile(p, standingsLookup[p.team] || null)),
+          "Use these profiles to assess whether this move fits or contradicts each GM's current operating style. Records above are live. Do not use your training data for GM behavior or team records.",
+        ].join("\n\n")
       : "";
 
     const analysisUserMsg = [
