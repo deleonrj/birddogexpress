@@ -2,9 +2,42 @@
 // Streaming validate — Pass 1 + MLB Stats run in parallel, Pass 2 streams tokens
 // Prompt caching enabled on both passes for performance
 
+import gmProfiles from "../../gm-profiles.json";
+
 export const config = {
   api: { responseLimit: false },
 };
+
+// ── GM profile lookup — matches team names found in rumor/findings to profiles ─
+function getGmProfiles(rumor, findings) {
+  const text = (rumor + " " + findings).toLowerCase();
+  const matched = gmProfiles.teams.filter(team => {
+    const teamLower = team.team.toLowerCase();
+    // Match full team name or city name
+    const city = teamLower.split(" ").slice(0, -1).join(" "); // e.g. "new york" from "new york yankees"
+    const nickname = teamLower.split(" ").pop(); // e.g. "yankees"
+    return text.includes(teamLower) || text.includes(nickname) || (city.length > 3 && text.includes(city));
+  });
+  // Cap at 3 teams to avoid token bloat
+  return matched.slice(0, 3);
+}
+
+// ── Format GM profile for injection into Pass 2 user message ─────────────────
+function formatGmProfile(profile) {
+  const dms = profile.decision_makers.map(d => `${d.name} (${d.title})`).join(", ");
+  const patterns = profile.known_patterns.slice(0, 3).join("; ");
+  return [
+    `Team: ${profile.team}`,
+    `Decision makers: ${dms}`,
+    `Current mode: ${profile.current_mode}`,
+    `Trade style: ${profile.trade_style}`,
+    `Prospect protection: ${profile.prospect_protection}`,
+    `Known patterns: ${patterns}`,
+    `Recent shifts: ${profile.recent_shifts}`,
+    `Fits: ${profile.default_modifier.fits}`,
+    `Contradicts: ${profile.default_modifier.contradicts}`,
+  ].join("\n");
+}
 
 // ── User-facing error messages — never expose raw API errors publicly ─────────
 function userFacingError(status, rawMessage) {
@@ -247,18 +280,29 @@ export default async function handler(req, res) {
     }
 
     const rawFindings = searchBlocks[searchBlocks.length - 1].text;
-    const researchFindings = rawFindings.length > 3000
-      ? rawFindings.substring(0, 3000) + "\n[truncated]"
+    const researchFindings = rawFindings.length > 4000
+      ? rawFindings.substring(0, 4000) + "\n[truncated for length]"
       : rawFindings;
 
     send("status", { message: "Sources scanned. Analyzing..." });
 
     // ── PASS 2: Streaming analysis ─────────────────────────────────────────────
+    const matchedProfiles = getGmProfiles(rumor, researchFindings);
+    const gmProfileSection = matchedProfiles.length > 0
+      ? [
+          "GM PROFILES FOR TEAMS INVOLVED:",
+          ...matchedProfiles.map(p => formatGmProfile(p)),
+          "Use these profiles to assess whether this move fits or contradicts each GM's current operating style. Do not use your training data for GM behavior — use only what is in these profiles.",
+        ].join("\n")
+      : "";
+
     const analysisUserMsg = [
       `Rumor: "${rumor}"`,
       "",
       `RESEARCH FINDINGS (${today}):`,
       researchFindings,
+      "",
+      gmProfileSection,
       "",
       standingsRes ? "MLB STANDINGS DATA: Available (use for fit analysis)." : "",
       "",
@@ -270,7 +314,7 @@ export default async function handler(req, res) {
       headers: anthropicHeaders,
       body: JSON.stringify({
         model: "claude-sonnet-4-6",
-        max_tokens: 1200,
+        max_tokens: 1500,
         system: analysisSystemPrompt,
         stream: true,
         messages: [{ role: "user", content: analysisUserMsg }],
