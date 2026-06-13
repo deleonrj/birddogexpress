@@ -1,6 +1,6 @@
 {
   "last_updated": "2026-06-12",
-  "note": "Priority teams (NYY, BAL, ATL, NYM, CHC, SDP, PHI, LAD, DET) researched with live 2026 data. Remaining teams use curated profiles \u2014 verify GM names against MLB Stats API at runtime.",
+  "note": "GM behavioral profiles \u2014 records are NOT stored here. Live records are injected at runtime from MLB Stats API. Only update behavioral intelligence (trade style, patterns, tendencies). Verify GM names periodically \u2014 front offices change.",
   "teams": [
     {
       "team": "Baltimore Orioles",
@@ -13,7 +13,7 @@
           "public_facing": true
         }
       ],
-      "current_mode": "seller risk \u2014 33-37, fourth in AL East, 7 games back of Tampa Bay",
+      "current_mode": "contend \u2014 under pressure after 2025 disaster, window is now",
       "fa_appetite": "evolved \u2014 historically avoided FA but made significant shift in 2025-26 offseason, signed Alonso and made other bold moves after publicly acknowledging he learned hard lessons",
       "trade_style": "historically stealth and prospect-focused, but explicitly stated he is adapting and evolving after 2025 failure",
       "prospect_protection": "high historically but lowering \u2014 farm depleted from 2024 deadline moves; won't gut what remains but shifting toward competing",
@@ -67,7 +67,7 @@
           "public_facing": true
         }
       ],
-      "current_mode": "contend \u2014 41-26, second in AL East behind Tampa Bay",
+      "current_mode": "contend",
       "fa_appetite": "moderate \u2014 has pulled back from era of blockbuster FA spending, prefers cost-efficient acquisitions with years of control",
       "trade_style": "reactive to roster needs, prefers multi-player packages over singular blockbuster trades, historically avoids shopping at top of market",
       "prospect_protection": "high in current era \u2014 Dominguez, Jones, Lagrange, Rodriguez widely considered untouchable, won't package blue-chip prospects for single star",
@@ -226,7 +226,7 @@
           "public_facing": true
         }
       ],
-      "current_mode": "uncertain \u2014 29-40, fourth in AL Central, 7 games back of White Sox, telling teams they are NOT sellers",
+      "current_mode": "uncertain \u2014 telling teams not sellers despite disappointing record, Skubal situation defining",
       "fa_appetite": "moderate \u2014 will spend to support young core but won't overcommit",
       "trade_style": "strategic, prospect-protective, Harris and Greenberg both cited in reporting \u2014 'didn't want to make a deal that would haunt us for many years'",
       "prospect_protection": "very high \u2014 elite young core (Skubal, Greene, McGonigle) treated as largely untouchable, elite farm system protected even during contention window",
@@ -440,7 +440,7 @@
           "public_facing": true
         }
       ],
-      "current_mode": "contend \u2014 45-23, best record in NL, commanding NL East lead",
+      "current_mode": "contend \u2014 best team in baseball, full mandate to push chips in",
       "fa_appetite": "high \u2014 $50-60M of freed payroll entering 2026, Profar suspension freed additional cap space, no financial obstacles",
       "trade_style": "creative and aggressive, moves before the deadline when he identifies a target, buys low on underperforming players with strong underlying metrics",
       "prospect_protection": "moderate \u2014 will protect top tier but has deep pitching pipeline as trade currency in 2026",
@@ -501,7 +501,7 @@
           "public_facing": true
         }
       ],
-      "current_mode": "seller \u2014 30-38, last in NL East, 15 games back of Braves",
+      "current_mode": "seller \u2014 significantly underperforming, deadline decision looming",
       "fa_appetite": "has Cohen's backing but Stearns adds analytical discipline \u2014 let Diaz and Alonso walk, replaced cheaper, more calculated than pure checkbook approach",
       "trade_style": "praised by rival GMs for 2025 deadline \u2014 'got the most bang for buck', traded bodies not real prospects, creative structures",
       "prospect_protection": "high in 2026 context \u2014 Soto and Lindor untouchable, won't trade real prospects from depleted system",
@@ -535,7 +535,7 @@
           "public_facing": false
         }
       ],
-      "current_mode": "contend \u2014 37-31, second in NL East, firmly in NL playoff picture",
+      "current_mode": "contend \u2014 recovered from brutal start under new manager Mattingly",
       "fa_appetite": "very high \u2014 ownership committed to contention, Dombrowski career built on aggressive moves",
       "trade_style": "Dombrowski is the public face named in rumors; Mattingly builds relationships and works phones executing behind the scenes; bullpen explicitly confirmed as the primary need",
       "prospect_protection": "low but running dry \u2014 three top-10 prospects traded at 2025 deadline for Duran/Bader, farm is light",
@@ -591,7 +591,7 @@
           "public_facing": true
         }
       ],
-      "current_mode": "contend \u2014 35-34, fourth in NL Central, borderline playoff position",
+      "current_mode": "contend \u2014 borderline playoff position, aggressiveness tied to bye odds",
       "fa_appetite": "high when contending \u2014 explicitly stated 'financially comfortable to address needs at deadline'",
       "trade_style": "aggressiveness directly tied to playoff bye odds \u2014 'a lot of that aggressiveness is based on that ability to get the bye'",
       "prospect_protection": "moderate \u2014 will move secondary prospects but protects top tier; farm depleted from 3 top-10 prospects traded at 2025 deadline",
@@ -793,7 +793,7 @@
           "public_facing": true
         }
       ],
-      "current_mode": "contend \u2014 44-25, best record in NL West, second best in NL behind Braves",
+      "current_mode": "contend \u2014 three-peat attempt, pitching injuries creating deadline pressure",
       "fa_appetite": "unlimited \u2014 but Friedman explicitly prefers front-loading FA spending to avoid deadline leverage",
       "trade_style": "measured and reluctant at deadline by philosophy \u2014 Friedman has repeatedly stated 'my goal is to not buy in July' and calls deadline prices 'terrible'; will act when forced by injuries",
       "prospect_protection": "low when forced to act \u2014 Sirota, Morales available as trade chips; will trade prospects if injuries force hand",
@@ -821,7 +821,7 @@
           "public_facing": true
         }
       ],
-      "current_mode": "contend \u2014 35-32, in NL West wild card spot, 9 games back of Dodgers",
+      "current_mode": "contend \u2014 worst offense in MLB, hybrid buy/sell approach likely",
       "fa_appetite": "high but CBT-constrained \u2014 $211M payroll already over second CBT threshold, limits pure FA spending",
       "trade_style": "most aggressive trader in baseball regardless of stated constraints \u2014 consistently finds creative paths to blockbuster deals even when pundits say it can't be done; hybrid buy/sell approach likely at 2026 deadline",
       "prospect_protection": "very low \u2014 has Salas, Mayfield, Schoolcraft as tradeable assets, history of dealing multiple top prospects in single deals",
