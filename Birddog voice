@@ -63,6 +63,7 @@ Never appear in any user-facing field:
 | "Confidence cap applied" | Never mention scoring mechanics |
 | "Modifier set to 0" | Never mention scoring mechanics |
 | "Truncated" | Never reference internal processing |
+| "Controllable" (unless confirmed) | "Rental", "controllable through [year]", or "extension candidate" — only use controllable if Pass 1 explicitly confirmed multiple years of team control |
 
 ---
 
@@ -89,16 +90,21 @@ Never appear in any user-facing field:
 - Written like a scout, not a data form
 - One plain sentence per field
 - If there's nothing real to say, leave it empty — never write "no data found"
-- **Financial must flag mismatches** — if the team can't afford the player, say so plainly. Don't just highlight positives.
+- **Financial must state contract classification first** — RENTAL, CONTROLLABLE, or EXTENSION CANDIDATE — then assess affordability. The classification changes the entire trade calculus.
+- **Financial must flag mismatches** — if the team can't afford the player, or the contract type doesn't fit the team's situation, say so plainly.
+- **Strategic must factor contract type** — a rental is a one-postseason bet, a controllable player is a franchise asset, an extension candidate is both.
 - **No destination named?** Roster describes what type of team need this player fills generally — don't assess a specific team.
 
-**Good example (roster):** "The Yankees need rotation depth and Alcantara is exactly the arm they'd target — durable, proven, and a genuine ace when healthy."
-**Bad example:** "No ROSTER LANDSCAPE data was returned. Positional need cannot be confirmed from research findings."
+**Contract classification rules:**
+- **RENTAL** — expiring contract this season, player walks to free agency after. Lower trade cost, one postseason run, acquiring team bets prospects on one year.
+- **CONTROLLABLE** — multiple years of team control remaining (pre-arb, arb-eligible, or under multi-year extension). Higher trade cost, franchise asset value. Never use this word unless Pass 1 explicitly confirmed multiple years of control.
+- **EXTENSION CANDIDATE** — expiring contract but extension talks are active or likely. Most complex — acquiring team buys both the rental and the lottery ticket on long-term control.
 
+**Good example (financial — rental):** "Ward is a rental — his deal expires after this season. The Orioles would be selling one year of a corner outfielder, which lowers the return package but makes him more accessible for a contender looking to fill a gap."
+**Good example (financial — controllable):** "Skubal has multiple years of control remaining — any acquiring team is paying franchise-asset prices, not rental prices. That dramatically raises the prospect cost."
 **Good example (financial mismatch):** "The Marlins don't have the payroll flexibility for a contract of this size — this deal would require significant financial creativity or a third team."
 **Bad example:** "Financial fit cannot be assessed from available data."
-
-**Good example (no destination):** "Alcantara is a top-of-rotation starter — any contender with rotation uncertainty and payroll flexibility is a natural fit."
+**Bad example:** "Ward is a controllable piece who fits the team's timeline." ← wrong classification, never use controllable for a rental
 
 ### gm_profile (GM / Front Office in Player Fit)
 - Name the GM
@@ -134,7 +140,7 @@ Never appear in any user-facing field:
 > "Any contender with rotation uncertainty is a fit — Alcantara is a genuine top-of-rotation arm when healthy."
 
 **Player Fit — Financial:**
-> "His remaining salary is manageable for a buyer with payroll space — mid-market teams could absorb it."
+> "Alcantara is an extension candidate — the Marlins would be selling him knowing a buyer could lock him up long-term. His salary is manageable for a contender with payroll space, but the extension potential raises the prospect cost above a typical rental."
 
 **Player Fit — Strategic:**
 > "A deadline rental or multi-year commitment both make sense depending on the team's window."
@@ -188,3 +194,6 @@ Run these before every significant prompt change:
 | Jun 10, 2026 | Pass 1 — recency weighting, past interest as sleeper context | High-profile players (Alcantara) were hitting 3,000 char truncation limit |
 | Jun 10, 2026 | Pass 2 — cross_market made mandatory | Fallback path was using fragile string matching |
 | Jun 10, 2026 | Pass 2 — three-tier suitor framework | Active vs returning vs darkhorse distinction adds real intelligence value |
+| Jun 12, 2026 | GM profiles database added — all 30 teams, 9 priority teams with live 2026 research | Pass 2 was guessing GM behavior from stale training data |
+| Jun 12, 2026 | Live standings injected into GM profiles at runtime — records never stored in JSON | Records in gm-profiles.json would go stale within weeks |
+| Jun 12, 2026 | Contract classification added — RENTAL / CONTROLLABLE / EXTENSION CANDIDATE | BirdDog was incorrectly calling rental players "controllable" — fundamentally different trade calculus |
