@@ -81,6 +81,7 @@ Never appear in any user-facing field:
 | "Confidence cap applied" | Never mention scoring mechanics |
 | "Modifier set to 0" | Never mention scoring mechanics |
 | "Truncated" | Never reference internal processing |
+| "Tier 1 reporter" / "Tier 2 reporter" | Name them directly (Passan, Rosenthal, Olney) or say "national reporter" / "corroborating reporter" |
 | "Aggregators" | "Roundup sites and analyst columns" |
 | "Controllable" (from training data) | Only use if MLB Stats API confirms multiple years of control — never from training data inference |
 
@@ -249,3 +250,4 @@ Run these before every significant prompt change:
 | Jun 13, 2026 | Player stats added — MLB Stats API for position player and pitcher stat sets injected into Pass 2 | Pass 2 was making up or guessing player performance characteristics from training data |
 | Jun 13, 2026 | Player ID resolution refactored — resolvePlayerId() runs first, contract and stats share the ID | Eliminated duplicate name searches, enabled true parallel execution of contract + stats |
 | Jun 13, 2026 | Player Fit fallback phrases added — BirdDog voice per field instead of empty string | Empty fields looked like bugs; fallback phrases maintain voice and set user expectations |
+| Jun 13, 2026 | Tier 1/Tier 2 added to banned phrases — use reporter names or "national reporter" instead | Internal scoring labels were bleeding into user-facing reasoning output |
