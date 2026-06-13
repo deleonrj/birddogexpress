@@ -102,17 +102,39 @@ Never appear in any user-facing field:
 - Explains why the score landed where it did without mentioning the scoring formula
 - Reads like Olney explaining his sourcing on a podcast
 - **Good example:** "Rosenthal has it as a name to watch, not an active deal. The Marlins beat hasn't picked it up, which matters — local reporters usually know first. Without a second national name moving on this, it stays in the 'worth monitoring' category."
-- **Bad example:** "The absence of beat reporter confirmation in both markets resulted in a confidence cap being applied at the 50-65 range. GM modifier was set to 0 due to insufficient data."
+- **Bad example:** "The absence of beat reporter confirmation in both markets resulted in a confidence cap being applied at the 50-65 range. GM profile assessment was skipped due to insufficient data."
 
 ### fit_analysis fields (Player Fit)
+- **All four fields share the same voice** — Passan/Olney/Ripken. No field is clinical, no field is a data form. Sound like a scout who's done the homework.
 - **Roster, Financial, Strategic** — focused on the RUMORED DESTINATION only. The suitors panel handles the broader market.
-- Written like a scout, not a data form
-- One plain sentence per field
-- If there's nothing real to say, leave it empty — never write "no data found"
-- **Financial states contract classification first** — sourced from MLB Stats API, not training data. The classification changes the entire trade calculus.
-- **Financial must flag mismatches** — if the team can't afford the player, or the contract type doesn't fit the team's situation, say so plainly.
-- **Strategic must factor contract type** — a rental is a one-postseason bet, a controllable player is a franchise asset, an extension candidate is both.
-- **No destination named?** Roster describes what type of team need this player fills generally — don't assess a specific team.
+- One plain sentence per field — written like a scout, not entered like a form
+- **All four fields have a BirdDog-voiced fallback** when data is unavailable — never empty, never "no data found"
+
+**Roster field — stats-informed:**
+- Use injected MLB Stats API stats to ground the assessment in real numbers
+- Name the position, name the strengths, name any relevant weaknesses for this specific trade context
+- If current season differs meaningfully from career norms and reporting confirms it, flag it
+- If no destination named, describe what type of team need this player fills and what their profile suits
+- Fallback: *"BirdDog's still mapping the roster situation — check back soon."*
+
+**Good example (roster — with destination):** "Ward is a right-handed corner outfielder with genuine pop and a .401 OBP against righties this season — the Cubs have a left-field gap and the lineup construction to let him thrive without hiding his platoon exposure."
+**Good example (roster — no destination):** "Ward profiles as a right-handed bat with gap power and a strong eye at the plate — a contender with a left field need and a lineup that faces a lot of lefties would be a natural fit."
+
+**Financial field:**
+- Contract classification first (from MLB Stats API) — RENTAL, CONTROLLABLE, or EXTENSION CANDIDATE
+- State it plainly: "Ward is a rental" or "Skubal is controllable with 2 arb years remaining"
+- Upgrade to EXTENSION CANDIDATE if extension context found in web search
+- Flag affordability mismatches — if the team can't pay, say so
+- Fallback: *"BirdDog's still sniffing around on this one. Contract details are out there somewhere — just haven't picked up the scent yet. Check back soon."*
+
+**Strategic field:**
+- Factor in contract type AND current team record from live standings
+- A rental is a one-postseason bet, controllable is a franchise asset, extension candidate is both
+- Fallback: *"Still reading the room on the strategic fit. More to come."*
+
+**GM / Front Office field:**
+- Use the injected GM profile — name the GM, current operating style, fits or contradicts
+- If no profile was injected, use fallback: *"The front office read is still coming in. BirdDog's working it."*
 
 **Contract classification rules:**
 - **RENTAL** — expiring contract this season confirmed by MLB Stats API. Lower trade cost, one postseason run.
@@ -224,3 +246,6 @@ Run these before every significant prompt change:
 | Jun 13, 2026 | Contract classification moved to MLB Stats API — structure from API, extension context from web search | Pass 1 web search was unreliable for contract structure; API provides authoritative arb status and years remaining |
 | Jun 13, 2026 | Ripken voice rule added — one moment per response, earned not forced | Output was Passan/Olney heavy; Ripken punctuation adds personality without becoming formulaic |
 | Jun 13, 2026 | Sourcing language softened — "roundup sites and analyst columns" replaces naming specific outlets | Naming outlets disparagingly creates legal/reputational risk and isn't BirdDog's voice |
+| Jun 13, 2026 | Player stats added — MLB Stats API for position player and pitcher stat sets injected into Pass 2 | Pass 2 was making up or guessing player performance characteristics from training data |
+| Jun 13, 2026 | Player ID resolution refactored — resolvePlayerId() runs first, contract and stats share the ID | Eliminated duplicate name searches, enabled true parallel execution of contract + stats |
+| Jun 13, 2026 | Player Fit fallback phrases added — BirdDog voice per field instead of empty string | Empty fields looked like bugs; fallback phrases maintain voice and set user expectations |
