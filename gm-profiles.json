@@ -1,0 +1,876 @@
+{
+  "last_updated": "2026-06-12",
+  "note": "Priority teams (NYY, BAL, ATL, NYM, CHC, SDP, PHI, LAD, DET) researched with live 2026 data. Remaining teams use curated profiles \u2014 verify GM names against MLB Stats API at runtime.",
+  "teams": [
+    {
+      "team": "Baltimore Orioles",
+      "abbreviation": "BAL",
+      "decision_makers": [
+        {
+          "name": "Mike Elias",
+          "title": "Executive VP & GM",
+          "role": "primary",
+          "public_facing": true
+        }
+      ],
+      "current_mode": "seller risk \u2014 33-37, fourth in AL East, 7 games back of Tampa Bay",
+      "fa_appetite": "evolved \u2014 historically avoided FA but made significant shift in 2025-26 offseason, signed Alonso and made other bold moves after publicly acknowledging he learned hard lessons",
+      "trade_style": "historically stealth and prospect-focused, but explicitly stated he is adapting and evolving after 2025 failure",
+      "prospect_protection": "high historically but lowering \u2014 farm depleted from 2024 deadline moves; won't gut what remains but shifting toward competing",
+      "known_patterns": [
+        "2025 was a full disaster \u2014 fired manager, went 75-87, traded 9 major leaguers at deadline and got no MLB-ready players back",
+        "Explicitly said he wouldn't pursue MLB-ready talent at 2025 deadline because 'you're going to get less talent, less value in return' \u2014 fan and media backlash was intense",
+        "2025-26 offseason showed genuine behavioral shift \u2014 signed Alonso, described as 'taking big swings with more conviction'",
+        "Currently 20-24 in 2026, under significant pressure \u2014 window is now, not theoretical",
+        "Stealth is his natural mode \u2014 deals rarely leak in advance"
+      ],
+      "recent_shifts": "Most significant shift in his Baltimore tenure \u2014 after 2025 disaster he publicly acknowledged the need to adapt. The Alonso signing was his clearest break from prior FA avoidance. At 33-37 in 2026, may face seller pressure despite offseason rebuild efforts.",
+      "default_modifier": {
+        "fits": "move that signals commitment to competing, multi-year controlled player, analytically-sound acquisition",
+        "contradicts": "pure prospect accumulation move, rental that delays competing, overly patient approach that ignores current window"
+      }
+    },
+    {
+      "team": "Boston Red Sox",
+      "abbreviation": "BOS",
+      "decision_makers": [
+        {
+          "name": "Craig Breslow",
+          "title": "Chief Baseball Officer",
+          "role": "primary",
+          "public_facing": true
+        }
+      ],
+      "current_mode": "retool",
+      "fa_appetite": "moderate \u2014 willing to spend but more disciplined than previous regimes",
+      "trade_style": "analytically driven, values upside over proven names",
+      "prospect_protection": "moderate \u2014 will move prospects for right proven piece",
+      "known_patterns": [
+        "Prioritizes pitching development and analytics",
+        "More patient than prior Red Sox regimes",
+        "Rebuilding organizational depth after years of depleting the farm"
+      ],
+      "recent_shifts": "First full cycle as CBO \u2014 still establishing his pattern, early moves suggest analytics-first approach",
+      "default_modifier": {
+        "fits": "young controllable talent, data-driven acquisition, pitching upgrade",
+        "contradicts": "veteran rental with no team control, purely name-driven move"
+      }
+    },
+    {
+      "team": "New York Yankees",
+      "abbreviation": "NYY",
+      "decision_makers": [
+        {
+          "name": "Brian Cashman",
+          "title": "Senior VP & GM",
+          "role": "primary",
+          "public_facing": true
+        }
+      ],
+      "current_mode": "contend \u2014 41-26, second in AL East behind Tampa Bay",
+      "fa_appetite": "moderate \u2014 has pulled back from era of blockbuster FA spending, prefers cost-efficient acquisitions with years of control",
+      "trade_style": "reactive to roster needs, prefers multi-player packages over singular blockbuster trades, historically avoids shopping at top of market",
+      "prospect_protection": "high in current era \u2014 Dominguez, Jones, Lagrange, Rodriguez widely considered untouchable, won't package blue-chip prospects for single star",
+      "known_patterns": [
+        "Publicly states 'hold the fort' philosophy when key players are injured \u2014 explicitly said Judge's absence wouldn't drive a big deadline move",
+        "Shops deadline market but historically avoids top of market \u2014 took Bednar/Doval/Bird over Miller or Duran in 2025",
+        "Prefers quiet offseason followed by reactive deadline \u2014 builds roster in spring, fills gaps in July",
+        "Won't trade untouchable young core (Dominguez, Jones, Lagrange, Rodriguez) regardless of pressure"
+      ],
+      "recent_shifts": "Significant shift from peak-Cashman blockbuster era \u2014 now favors analytically-driven, cost-efficient acquisitions with team control. Judge rib injury (4-6 weeks) in June 2026 explicitly did NOT change his deadline approach per his own words: 'We just have to hold the fort.'",
+      "default_modifier": {
+        "fits": "bullpen upgrade with multi-year control, cost-efficient acquisition, addresses confirmed roster gap",
+        "contradicts": "trading blue-chip prospects for single star, blockbuster splashy move, big commitment during injury absence"
+      }
+    },
+    {
+      "team": "Tampa Bay Rays",
+      "abbreviation": "TBR",
+      "decision_makers": [
+        {
+          "name": "Erik Neander",
+          "title": "President of Baseball Operations",
+          "role": "primary",
+          "public_facing": true
+        },
+        {
+          "name": "Committee of AGMs",
+          "title": "Multiple Assistant GMs",
+          "role": "secondary",
+          "public_facing": false
+        }
+      ],
+      "current_mode": "contend",
+      "fa_appetite": "very low \u2014 builds almost exclusively through draft, development, and low-cost trades",
+      "trade_style": "creative, non-conventional, often finds value others overlook",
+      "prospect_protection": "very high \u2014 system is their entire competitive model",
+      "known_patterns": [
+        "Decision-making distributed across front office committee \u2014 no single person executes independently",
+        "Finds value in players other teams discard",
+        "Trades internally developed players before they hit free agency",
+        "Never overpays \u2014 will walk away from a deal rather than give up too much"
+      ],
+      "recent_shifts": "New ownership under Patrick Zalupski in 2026 \u2014 potential for spending increase but core philosophy unchanged under Neander",
+      "default_modifier": {
+        "fits": "low-cost acquisition, reclamation project, creative structure",
+        "contradicts": "big FA commitment, overpaying for a name, trading multiple top prospects"
+      }
+    },
+    {
+      "team": "Toronto Blue Jays",
+      "abbreviation": "TOR",
+      "decision_makers": [
+        {
+          "name": "Mark Shapiro",
+          "title": "President & CEO",
+          "role": "secondary",
+          "public_facing": true
+        },
+        {
+          "name": "Ross Atkins",
+          "title": "Executive VP & GM",
+          "role": "primary",
+          "public_facing": true
+        }
+      ],
+      "current_mode": "contend",
+      "fa_appetite": "high \u2014 willing to commit to proven players, signed Guerrero Jr. extension, pursued World Series in 2025",
+      "trade_style": "active, willing to move prospects for proven talent at deadline",
+      "prospect_protection": "moderate \u2014 will trade from system when window is open",
+      "known_patterns": [
+        "Atkins extended through 2031 after 2025 World Series run",
+        "Willing to spend when contention window is clear",
+        "Shapiro sets organizational direction, Atkins executes",
+        "Won't trade franchise cornerstones (Guerrero Jr.)"
+      ],
+      "recent_shifts": "2025 AL pennant gives front office mandate to push chips in \u2014 more aggressive posture expected at 2026 deadline",
+      "default_modifier": {
+        "fits": "proven starter or impact bat, multi-year control, fits alongside Guerrero Jr.",
+        "contradicts": "pure rental with no extension potential, positional overlap with Guerrero Jr."
+      }
+    },
+    {
+      "team": "Chicago White Sox",
+      "abbreviation": "CWS",
+      "decision_makers": [
+        {
+          "name": "Chris Getz",
+          "title": "GM",
+          "role": "primary",
+          "public_facing": true
+        }
+      ],
+      "current_mode": "emerging contender",
+      "fa_appetite": "low to moderate \u2014 prefers trade market over FA, cost-conscious",
+      "trade_style": "patient, values multi-year control over rentals, high asking price when selling",
+      "prospect_protection": "high \u2014 won't trade top prospects for rentals, wants multi-year pieces",
+      "known_patterns": [
+        "Explicitly stated 'it's never been about 2026' even as team contends \u2014 big picture mindset",
+        "Sets high asking price in trade discussions, willing to walk away",
+        "Prefers acquiring multi-year players over one-year rentals",
+        "Doesn't panic-sell or panic-buy"
+      ],
+      "recent_shifts": "Team's surprise 2026 contention is testing his patience-first approach \u2014 monitoring deadline but unlikely to go all-in",
+      "default_modifier": {
+        "fits": "multi-year controlled player, analytically valued, fits young core timeline",
+        "contradicts": "pure rental, top prospect cost, win-now move that compromises the rebuild"
+      }
+    },
+    {
+      "team": "Cleveland Guardians",
+      "abbreviation": "CLE",
+      "decision_makers": [
+        {
+          "name": "Chris Antonetti",
+          "title": "President of Baseball Operations",
+          "role": "secondary",
+          "public_facing": true
+        },
+        {
+          "name": "Mike Chernoff",
+          "title": "GM",
+          "role": "primary",
+          "public_facing": true
+        }
+      ],
+      "current_mode": "contend",
+      "fa_appetite": "very low \u2014 one of the lowest payrolls in MLB, builds through development",
+      "trade_style": "creative, value-driven, sells high on developed players",
+      "prospect_protection": "high \u2014 system is their competitive advantage",
+      "known_patterns": [
+        "Payroll consistently among MLB's lowest \u2014 won't sign big FA contracts",
+        "Trades developed players before they get expensive",
+        "Finds efficiency others miss \u2014 back-to-back AL Central titles on low budget",
+        "Will not get into a bidding war"
+      ],
+      "recent_shifts": "No major shift \u2014 model has been consistent for a decade",
+      "default_modifier": {
+        "fits": "low-cost trade, controllable player, pre-arb talent",
+        "contradicts": "big salary addition, multi-year FA commitment, major prospect expenditure"
+      }
+    },
+    {
+      "team": "Detroit Tigers",
+      "abbreviation": "DET",
+      "decision_makers": [
+        {
+          "name": "Scott Harris",
+          "title": "President of Baseball Operations",
+          "role": "secondary",
+          "public_facing": true
+        },
+        {
+          "name": "Jeff Greenberg",
+          "title": "GM",
+          "role": "primary",
+          "public_facing": true
+        }
+      ],
+      "current_mode": "uncertain \u2014 29-40, fourth in AL Central, 7 games back of White Sox, telling teams they are NOT sellers",
+      "fa_appetite": "moderate \u2014 will spend to support young core but won't overcommit",
+      "trade_style": "strategic, prospect-protective, Harris and Greenberg both cited in reporting \u2014 'didn't want to make a deal that would haunt us for many years'",
+      "prospect_protection": "very high \u2014 elite young core (Skubal, Greene, McGonigle) treated as largely untouchable, elite farm system protected even during contention window",
+      "known_patterns": [
+        "Harris and Greenberg both appear in reporting \u2014 Harris sets organizational direction, Greenberg executes and is quoted on specifics",
+        "Skubal situation is the defining question \u2014 pending FA after 2026, teams are calling but Tigers insisting they are not sellers despite 29-40 record",
+        "At 2025 deadline when best team in baseball, took modest approach \u2014 Harris said didn't want deal to 'haunt us for many years to come'",
+        "Will protect elite prospects regardless of pressure \u2014 Skubal, Greene, McGonigle untouchable",
+        "If window closes further, may pivot to selling \u2014 Skubal especially"
+      ],
+      "recent_shifts": "Dramatic reversal from 2025 (best team in baseball) to 2026 (29-40, 8 games back). Despite the record, front office still telling teams they are not sellers as of June 2026. Skubal returning from IL this week is pivotal \u2014 if he's healthy and team climbs, they buy. If they keep sliding, expect seller pivot.",
+      "default_modifier": {
+        "fits": "move that protects young core, bat to support Skubal, multi-year controllable addition",
+        "contradicts": "trading Skubal, packaging multiple elite prospects, anything that signals giving up on current window"
+      }
+    },
+    {
+      "team": "Kansas City Royals",
+      "abbreviation": "KCR",
+      "decision_makers": [
+        {
+          "name": "J.J. Picollo",
+          "title": "GM",
+          "role": "primary",
+          "public_facing": true
+        }
+      ],
+      "current_mode": "retool",
+      "fa_appetite": "moderate \u2014 willing to make targeted additions",
+      "trade_style": "developing pattern, builds through draft",
+      "prospect_protection": "high \u2014 system is foundation of rebuild",
+      "known_patterns": [
+        "Patient approach, building organizational depth",
+        "Willing to make calculated additions when window approaches"
+      ],
+      "recent_shifts": "No dramatic shifts identified",
+      "default_modifier": {
+        "fits": "controllable player, fits rebuild timeline, low salary",
+        "contradicts": "veteran rental, major prospect cost, win-now move"
+      }
+    },
+    {
+      "team": "Minnesota Twins",
+      "abbreviation": "MIN",
+      "decision_makers": [
+        {
+          "name": "Jeremy Zoll",
+          "title": "GM",
+          "role": "primary",
+          "public_facing": true
+        }
+      ],
+      "current_mode": "contend",
+      "fa_appetite": "moderate",
+      "trade_style": "limited track record in current role \u2014 pattern still establishing",
+      "prospect_protection": "moderate",
+      "known_patterns": [
+        "Relatively new in role \u2014 behavioral pattern still developing",
+        "Inherited contending roster, expected to maintain it"
+      ],
+      "recent_shifts": "New GM \u2014 prior regime tendencies may not apply",
+      "default_modifier": {
+        "fits": "proven upgrade, fits roster timeline",
+        "contradicts": "major farm system cost with limited win-now benefit"
+      }
+    },
+    {
+      "team": "Houston Astros",
+      "abbreviation": "HOU",
+      "decision_makers": [
+        {
+          "name": "Dana Brown",
+          "title": "GM",
+          "role": "primary",
+          "public_facing": true
+        }
+      ],
+      "current_mode": "contend",
+      "fa_appetite": "moderate \u2014 selective, values fit over name",
+      "trade_style": "active at deadline, values pitching, will move prospects for right piece",
+      "prospect_protection": "moderate \u2014 will trade from depth for proven talent",
+      "known_patterns": [
+        "Pitching-first organization \u2014 always in market for rotation upgrades",
+        "Willing to move when window is clear",
+        "Replaced Luhnow-era model but maintained contention"
+      ],
+      "recent_shifts": "Brown still establishing his own identity separate from prior regime",
+      "default_modifier": {
+        "fits": "proven starter, bullpen upgrade, controllable talent",
+        "contradicts": "position player luxury, pure rental without extension potential"
+      }
+    },
+    {
+      "team": "Los Angeles Angels",
+      "abbreviation": "LAA",
+      "decision_makers": [
+        {
+          "name": "Perry Minasian",
+          "title": "GM",
+          "role": "primary",
+          "public_facing": true
+        }
+      ],
+      "current_mode": "seller",
+      "fa_appetite": "low \u2014 ownership constraints, likely in sell mode",
+      "trade_style": "seller at deadline, moving veterans for prospects",
+      "prospect_protection": "low when selling \u2014 will move pieces to rebuild",
+      "known_patterns": [
+        "Constrained by Ohtani departure and roster in transition",
+        "Likely seller at deadline as rebuild continues",
+        "Minasian has been disciplined but limited by ownership spending"
+      ],
+      "recent_shifts": "Post-Ohtani era rebuild \u2014 clearly in transition mode",
+      "default_modifier": {
+        "fits": "selling veterans, adding controllable young talent in return",
+        "contradicts": "major FA commitment, aggressive buyer move"
+      }
+    },
+    {
+      "team": "Oakland Athletics",
+      "abbreviation": "OAK",
+      "decision_makers": [
+        {
+          "name": "David Forst",
+          "title": "GM",
+          "role": "primary",
+          "public_facing": true
+        }
+      ],
+      "current_mode": "rebuild",
+      "fa_appetite": "very low \u2014 one of lowest payrolls in baseball",
+      "trade_style": "seller, accumulates prospects",
+      "prospect_protection": "low when selling \u2014 will move anyone for the right return",
+      "known_patterns": [
+        "Perpetual seller \u2014 trades proven players for prospect capital",
+        "Moneyball-era efficiency model still in place",
+        "Stadium situation and relocation ongoing \u2014 organizational uncertainty"
+      ],
+      "recent_shifts": "Relocation to Sacramento in process \u2014 organizational instability",
+      "default_modifier": {
+        "fits": "selling veterans for prospects, low-cost reclamation",
+        "contradicts": "buying at deadline, major FA commitment"
+      }
+    },
+    {
+      "team": "Seattle Mariners",
+      "abbreviation": "SEA",
+      "decision_makers": [
+        {
+          "name": "Justin Hollander",
+          "title": "GM",
+          "role": "primary",
+          "public_facing": true
+        }
+      ],
+      "current_mode": "contend",
+      "fa_appetite": "moderate \u2014 has shown willingness to spend on right pieces",
+      "trade_style": "active, values pitching, patient but will move when window demands",
+      "prospect_protection": "moderate \u2014 will protect elite prospects but move from depth",
+      "known_patterns": [
+        "Pitching-first organization",
+        "Patient approach, won't overpay",
+        "Relatively new in GM role \u2014 pattern still developing"
+      ],
+      "recent_shifts": "Hollander newer in role \u2014 prior Dipoto tendencies may not fully apply",
+      "default_modifier": {
+        "fits": "bat to complement pitching, controllable, fits timeline",
+        "contradicts": "pitching acquisition (already deep), major prospect cost for rental"
+      }
+    },
+    {
+      "team": "Texas Rangers",
+      "abbreviation": "TEX",
+      "decision_makers": [
+        {
+          "name": "Chris Young",
+          "title": "President of Baseball Operations",
+          "role": "secondary",
+          "public_facing": true
+        },
+        {
+          "name": "Ross Fenstermaker",
+          "title": "GM",
+          "role": "primary",
+          "public_facing": false
+        }
+      ],
+      "current_mode": "contend",
+      "fa_appetite": "high \u2014 ownership willing to spend, signed major FA contracts",
+      "trade_style": "active, aggressive when window is open, Young is the public face",
+      "prospect_protection": "moderate \u2014 will move prospects to stay competitive",
+      "known_patterns": [
+        "Chris Young is the decision-maker reporters name \u2014 Fenstermaker operates behind the scenes",
+        "Ownership willing to open checkbook after 2023 World Series",
+        "Won't rebuild \u2014 ownership expects to compete"
+      ],
+      "recent_shifts": "Post-World Series expectations create pressure to remain aggressive",
+      "default_modifier": {
+        "fits": "proven impact player, fits contention window, ownership-approved spend",
+        "contradicts": "rebuild move, salary dump, trading cornerstones"
+      }
+    },
+    {
+      "team": "Atlanta Braves",
+      "abbreviation": "ATL",
+      "decision_makers": [
+        {
+          "name": "Alex Anthopoulos",
+          "title": "President of Baseball Ops & GM",
+          "role": "primary",
+          "public_facing": true
+        }
+      ],
+      "current_mode": "contend \u2014 45-23, best record in NL, commanding NL East lead",
+      "fa_appetite": "high \u2014 $50-60M of freed payroll entering 2026, Profar suspension freed additional cap space, no financial obstacles",
+      "trade_style": "creative and aggressive, moves before the deadline when he identifies a target, buys low on underperforming players with strong underlying metrics",
+      "prospect_protection": "moderate \u2014 will protect top tier but has deep pitching pipeline as trade currency in 2026",
+      "known_patterns": [
+        "Publicly stated he fully expects to be 'engaged in trades come July' \u2014 unusually direct for him",
+        "Famous for moving before the deadline when target is identified \u2014 traded for Joc Pederson two weeks early in 2021",
+        "Buys low on struggling veterans with good underlying metrics \u2014 Joc Pederson, Chas McCormick, Jordan Hicks are examples",
+        "Won't trade players purely for payroll relief \u2014 wants talent back",
+        "2025 was quiet deadline by design \u2014 preserved flexibility, set up $50-60M entering 2026"
+      ],
+      "recent_shifts": "Complete turnaround from 2025. After disastrous 2025 (7-18 stretch, quiet deadline), Braves are best team in baseball in 2026. AA has more mandate, more money, and more prospect depth than he has had in years. Expect most aggressive deadline posture since 2021.",
+      "default_modifier": {
+        "fits": "any upgrade that makes roster better, underperforming player with good metrics, move before deadline when target identified",
+        "contradicts": "trading current competitive window away, pure rebuild move, anything that weakens the 2026 team"
+      }
+    },
+    {
+      "team": "Miami Marlins",
+      "abbreviation": "MIA",
+      "decision_makers": [
+        {
+          "name": "Peter Bendix",
+          "title": "President of Baseball Operations",
+          "role": "primary",
+          "public_facing": true
+        },
+        {
+          "name": "Gabe Kapler",
+          "title": "GM",
+          "role": "secondary",
+          "public_facing": true
+        }
+      ],
+      "current_mode": "rebuild",
+      "fa_appetite": "very low \u2014 severe payroll constraints, Bendix building Rays-style system",
+      "trade_style": "seller, trades veterans for prospects, builds through analytics and development",
+      "prospect_protection": "high \u2014 system is being built deliberately",
+      "known_patterns": [
+        "Bendix is top decision-maker \u2014 Kapler holds GM title but Bendix runs the operation",
+        "Implementing Tampa Bay model in Miami \u2014 patient, analytics-driven rebuild",
+        "Aggressively traded veterans (Arraez, others) to accumulate prospects",
+        "Won't spend in FA \u2014 ownership model doesn't support it"
+      ],
+      "recent_shifts": "Improved 17 wins from 2024 to 2025 \u2014 rebuild progressing, but still firmly in seller mode",
+      "default_modifier": {
+        "fits": "selling veterans for controlled young talent",
+        "contradicts": "buying at deadline, major FA commitment, any move that accelerates payroll"
+      }
+    },
+    {
+      "team": "New York Mets",
+      "abbreviation": "NYM",
+      "decision_makers": [
+        {
+          "name": "David Stearns",
+          "title": "President of Baseball Operations",
+          "role": "primary",
+          "public_facing": true
+        }
+      ],
+      "current_mode": "seller \u2014 30-38, last in NL East, 15 games back of Braves",
+      "fa_appetite": "has Cohen's backing but Stearns adds analytical discipline \u2014 let Diaz and Alonso walk, replaced cheaper, more calculated than pure checkbook approach",
+      "trade_style": "praised by rival GMs for 2025 deadline \u2014 'got the most bang for buck', traded bodies not real prospects, creative structures",
+      "prospect_protection": "high in 2026 context \u2014 Soto and Lindor untouchable, won't trade real prospects from depleted system",
+      "known_patterns": [
+        "Rival GMs said Stearns 'had a hell of a deadline' in 2025 \u2014 got high-profile players (Helsley, Rogers, Soto, Mullins) by trading 'bodies not prospects'",
+        "Stearns has added analytical discipline to Cohen money \u2014 not just spending blindly",
+        "Currently 26-33 in 2026 \u2014 widely expected to be sellers at August 3 deadline",
+        "Explicitly non-committal: 'We're not anywhere close to that point yet' on buy/sell decision as of June 2026",
+        "Untouchable: Soto, Lindor \u2014 everything else is at least discussable"
+      ],
+      "recent_shifts": "Stearns' third year as Mets PBO \u2014 team has underperformed badly in 2026. His prior reputation for creative dealing will be tested as a seller. Expect him to maximize return on veterans while protecting any remaining prospect capital.",
+      "default_modifier": {
+        "fits": "selling veterans for controllable young talent, creative structure, deals that protect farm",
+        "contradicts": "buying at deadline given current record, trading Soto or Lindor, depleting already-thin farm system"
+      }
+    },
+    {
+      "team": "Philadelphia Phillies",
+      "abbreviation": "PHI",
+      "decision_makers": [
+        {
+          "name": "Dave Dombrowski",
+          "title": "President of Baseball Operations",
+          "role": "primary",
+          "public_facing": true
+        },
+        {
+          "name": "Preston Mattingly",
+          "title": "GM",
+          "role": "secondary",
+          "public_facing": false
+        }
+      ],
+      "current_mode": "contend \u2014 37-31, second in NL East, firmly in NL playoff picture",
+      "fa_appetite": "very high \u2014 ownership committed to contention, Dombrowski career built on aggressive moves",
+      "trade_style": "Dombrowski is the public face named in rumors; Mattingly builds relationships and works phones executing behind the scenes; bullpen explicitly confirmed as the primary need",
+      "prospect_protection": "low but running dry \u2014 three top-10 prospects traded at 2025 deadline for Duran/Bader, farm is light",
+      "known_patterns": [
+        "Dombrowski explicitly confirmed bullpen is the need: 'the back end of our bullpen is the one area'",
+        "Dombrowski is the name reporters use in trade discussions \u2014 he is the public decision-maker",
+        "Mattingly fired as Blue Jays manager before becoming Phillies GM \u2014 builds relationships quietly, executes deals",
+        "Farm is depleted \u2014 won't be able to make a blockbuster prospect package easily in 2026",
+        "Dombrowski's career pattern is trading prospects for proven stars \u2014 but well is running dry",
+        "'2021 Braves approach' being discussed \u2014 scanning for underperforming hitters with good underlying metrics rather than paying up for frontline stars"
+      ],
+      "recent_shifts": "Thomson firing to Mattingly hire completely changed the season. With farm depleted, Dombrowski may be forced toward the smarter '2021 Braves approach' \u2014 buying low on underperforming players with good metrics rather than overpaying for stars. Bullpen is the confirmed need.",
+      "default_modifier": {
+        "fits": "bullpen arm, underperforming player with strong underlying metrics, fits win-now window",
+        "contradicts": "major prospect cost (farm is depleted), purely rebuilding move, anything that doesn't address bullpen need"
+      }
+    },
+    {
+      "team": "Washington Nationals",
+      "abbreviation": "WSH",
+      "decision_makers": [
+        {
+          "name": "Mike Rizzo",
+          "title": "President of Baseball Ops & GM",
+          "role": "primary",
+          "public_facing": true
+        }
+      ],
+      "current_mode": "rebuild",
+      "fa_appetite": "low \u2014 in rebuild mode, building through draft",
+      "trade_style": "seller, accumulates prospects and future assets",
+      "prospect_protection": "high \u2014 system is being rebuilt deliberately",
+      "known_patterns": [
+        "Long-tenured GM \u2014 deep relationships around the league",
+        "Patient rebuilder \u2014 did it before with Harper/Strasburg era",
+        "Sells veterans for future value",
+        "Trusted by other GMs \u2014 deals get done"
+      ],
+      "recent_shifts": "Full rebuild mode after trading away veterans \u2014 focused on next competitive window",
+      "default_modifier": {
+        "fits": "selling veterans for prospects, patient acquisition of controllable talent",
+        "contradicts": "win-now move, major FA commitment during rebuild"
+      }
+    },
+    {
+      "team": "Chicago Cubs",
+      "abbreviation": "CHC",
+      "decision_makers": [
+        {
+          "name": "Jed Hoyer",
+          "title": "President of Baseball Operations",
+          "role": "primary",
+          "public_facing": true
+        }
+      ],
+      "current_mode": "contend \u2014 35-34, fourth in NL Central, borderline playoff position",
+      "fa_appetite": "high when contending \u2014 explicitly stated 'financially comfortable to address needs at deadline'",
+      "trade_style": "aggressiveness directly tied to playoff bye odds \u2014 'a lot of that aggressiveness is based on that ability to get the bye'",
+      "prospect_protection": "moderate \u2014 will move secondary prospects but protects top tier; farm depleted from 3 top-10 prospects traded at 2025 deadline",
+      "known_patterns": [
+        "Deadline aggressiveness explicitly tied to World Series bye probability \u2014 won't go all-in unless in position to get top-2 NL seed",
+        "Rotation is clear primary need \u2014 Boyd and Steele both injured in 2026, Hoyer confirmed 'we'll be looking at pitching'",
+        "Position player group is strength \u2014 no position player need at deadline",
+        "2025 deadline disappointed fans \u2014 only acquired Willi Castro and veteran relievers despite promising position",
+        "Would consider both rentals and multi-year players, prefers controllable"
+      ],
+      "recent_shifts": "Started 27-12 then went 6-18 \u2014 now 35-34 and monitoring standings closely. Hoyer's stated bye-first philosophy means his deadline aggression is directly tied to standings over next 6 weeks. Need significant climb to unlock full aggressiveness.",
+      "default_modifier": {
+        "fits": "rotation upgrade, proven starter, Cubs in top-2 NL at deadline",
+        "contradicts": "position player acquisition (strength), move that costs top prospects when team is borderline playoff"
+      }
+    },
+    {
+      "team": "Cincinnati Reds",
+      "abbreviation": "CIN",
+      "decision_makers": [
+        {
+          "name": "Nick Krall",
+          "title": "President of Baseball Operations",
+          "role": "primary",
+          "public_facing": true
+        }
+      ],
+      "current_mode": "emerging contender",
+      "fa_appetite": "low to moderate \u2014 payroll constrained, builds through development",
+      "trade_style": "careful, won't overpay, values controllable talent",
+      "prospect_protection": "high \u2014 young core is organizational centerpiece",
+      "known_patterns": [
+        "Elite young core \u2014 India, De La Cruz, others",
+        "Won't trade core pieces regardless of asking price",
+        "Payroll constraints limit FA activity",
+        "Will add selectively around young nucleus"
+      ],
+      "recent_shifts": "Window opening with young core \u2014 may become more active buyer as contention solidifies",
+      "default_modifier": {
+        "fits": "complementary piece around young core, cost-controlled, fills specific gap",
+        "contradicts": "trading young core, major FA commitment, win-now at expense of future"
+      }
+    },
+    {
+      "team": "Milwaukee Brewers",
+      "abbreviation": "MIL",
+      "decision_makers": [
+        {
+          "name": "Matt Arnold",
+          "title": "Senior VP & GM",
+          "role": "primary",
+          "public_facing": true
+        }
+      ],
+      "current_mode": "contend",
+      "fa_appetite": "low \u2014 small market, builds through efficiency",
+      "trade_style": "creative, finds undervalued players, trades developed talent",
+      "prospect_protection": "moderate \u2014 will move from depth but protects top tier",
+      "known_patterns": [
+        "Small market efficiency model \u2014 consistently competitive on limited budget",
+        "Pitching development is organizational strength",
+        "Won't get into bidding wars \u2014 walks away from overpriced deals",
+        "Regularly trades players before they get expensive"
+      ],
+      "recent_shifts": "No major shift \u2014 consistent model throughout Arnold tenure",
+      "default_modifier": {
+        "fits": "low-cost, high-efficiency acquisition, fits pitching-first model",
+        "contradicts": "major FA commitment, overpaying, trading top prospects for rental"
+      }
+    },
+    {
+      "team": "Pittsburgh Pirates",
+      "abbreviation": "PIT",
+      "decision_makers": [
+        {
+          "name": "Ben Cherington",
+          "title": "GM",
+          "role": "primary",
+          "public_facing": true
+        }
+      ],
+      "current_mode": "rebuild",
+      "fa_appetite": "very low \u2014 ownership among least willing to spend in baseball",
+      "trade_style": "seller, reluctant to extend players, trades talent before extension",
+      "prospect_protection": "moderate \u2014 will protect elite prospects (Skenes) but others are available",
+      "known_patterns": [
+        "Ownership severely limits payroll \u2014 Cherington works within extreme constraints",
+        "Paul Skenes trade rumors persist because ownership won't pay him when he's eligible",
+        "Pattern of developing and trading players rather than extending",
+        "Cherington is competent but hamstrung by ownership"
+      ],
+      "recent_shifts": "Skenes situation will define this front office \u2014 keep or trade is the defining question",
+      "default_modifier": {
+        "fits": "selling players at peak value, low payroll additions",
+        "contradicts": "major FA commitment, buying at deadline, any significant spend"
+      }
+    },
+    {
+      "team": "St. Louis Cardinals",
+      "abbreviation": "STL",
+      "decision_makers": [
+        {
+          "name": "John Mozeliak",
+          "title": "President of Baseball Operations",
+          "role": "primary",
+          "public_facing": true
+        }
+      ],
+      "current_mode": "retool",
+      "fa_appetite": "moderate \u2014 selective, values fit and age curve",
+      "trade_style": "patient, methodical, rarely overpays",
+      "prospect_protection": "moderate",
+      "known_patterns": [
+        "One of the longest-tenured executives in baseball",
+        "Deep relationships across the league \u2014 trusted by peers",
+        "Methodical approach \u2014 rarely makes panic moves",
+        "Has navigated multiple roster transitions successfully"
+      ],
+      "recent_shifts": "Transitioning from Goldschmidt/Arenado era \u2014 reloading around new core",
+      "default_modifier": {
+        "fits": "calculated upgrade, fits age curve, multiple years of control",
+        "contradicts": "panic buy, overpaying, trading from system strength"
+      }
+    },
+    {
+      "team": "Arizona Diamondbacks",
+      "abbreviation": "ARI",
+      "decision_makers": [
+        {
+          "name": "Mike Hazen",
+          "title": "Executive VP & GM",
+          "role": "primary",
+          "public_facing": true
+        }
+      ],
+      "current_mode": "contend",
+      "fa_appetite": "moderate \u2014 willing to spend on right pieces around young core",
+      "trade_style": "active, builds through development and trades, not afraid of creative deals",
+      "prospect_protection": "moderate \u2014 will trade from depth but protects elite prospects",
+      "known_patterns": [
+        "Built 2023 World Series team through development and smart trades",
+        "Creative deal-maker \u2014 finds solutions others miss",
+        "Willing to move veterans when the price is right",
+        "Builds around pitching and defense"
+      ],
+      "recent_shifts": "Post-2023 World Series run \u2014 young core intact, window firmly open",
+      "default_modifier": {
+        "fits": "controllable talent, fits young core timeline, pitching",
+        "contradicts": "trading young core, pure rental, move that compromises future"
+      }
+    },
+    {
+      "team": "Colorado Rockies",
+      "abbreviation": "COL",
+      "decision_makers": [
+        {
+          "name": "Paul DePodesta",
+          "title": "President of Baseball Operations",
+          "role": "secondary",
+          "public_facing": true
+        },
+        {
+          "name": "Josh Byrnes",
+          "title": "GM",
+          "role": "primary",
+          "public_facing": true
+        }
+      ],
+      "current_mode": "rebuild",
+      "fa_appetite": "very low \u2014 full rebuild, prior regime left roster depleted",
+      "trade_style": "seller, trading veterans for prospects",
+      "prospect_protection": "low during rebuild \u2014 accumulating young talent",
+      "known_patterns": [
+        "Byrnes new in 2026 \u2014 bringing Dodgers analytics model to Colorado",
+        "DePodesta is the organizational architect, Byrnes executes",
+        "Coming off historically bad 2025 \u2014 full reset in progress",
+        "Coors Field requires rethinking traditional pitching approaches"
+      ],
+      "recent_shifts": "Complete front office overhaul in 2025-2026 \u2014 new ownership thinking, new approach, ignore prior Rockies patterns entirely",
+      "default_modifier": {
+        "fits": "selling veterans, accumulating prospects and draft capital",
+        "contradicts": "any buying move, major commitment, anything that doesn't serve the rebuild"
+      }
+    },
+    {
+      "team": "Los Angeles Dodgers",
+      "abbreviation": "LAD",
+      "decision_makers": [
+        {
+          "name": "Andrew Friedman",
+          "title": "President of Baseball Operations",
+          "role": "primary",
+          "public_facing": true
+        },
+        {
+          "name": "Brandon Gomes",
+          "title": "Executive VP & GM",
+          "role": "secondary",
+          "public_facing": true
+        }
+      ],
+      "current_mode": "contend \u2014 44-25, best record in NL West, second best in NL behind Braves",
+      "fa_appetite": "unlimited \u2014 but Friedman explicitly prefers front-loading FA spending to avoid deadline leverage",
+      "trade_style": "measured and reluctant at deadline by philosophy \u2014 Friedman has repeatedly stated 'my goal is to not buy in July' and calls deadline prices 'terrible'; will act when forced by injuries",
+      "prospect_protection": "low when forced to act \u2014 Sirota, Morales available as trade chips; will trade prospects if injuries force hand",
+      "known_patterns": [
+        "Friedman explicitly and repeatedly states he hates the trade deadline \u2014 'It is terrible' \u2014 and tries to build roster in offseason to avoid it",
+        "Despite stated preference, injuries (Snell surgery, Glasnow setback in 2026) may force action",
+        "Gomes handles day-to-day roster decisions, Friedman sets strategy \u2014 Friedman is the name that matters in trade talks",
+        "When forced to act, will not be outbid \u2014 unlimited resources",
+        "Two straight World Series titles (2024, 2025) \u2014 three-peat attempt gives even more mandate"
+      ],
+      "recent_shifts": "In 2026, Friedman has 'shut down' idea of big rotation move despite Snell and Glasnow both on IL. Acquired Eric Lauer for cheap as rotation depth. His default is to avoid deadline market \u2014 but if rotation injuries worsen, expect him to act decisively and expensively.",
+      "default_modifier": {
+        "fits": "move forced by injuries, proven pitcher with multiple years of control, fits three-peat window",
+        "contradicts": "voluntary deadline shopping, paying premium for marginal upgrade, move Friedman would consider unnecessary"
+      }
+    },
+    {
+      "team": "San Diego Padres",
+      "abbreviation": "SDP",
+      "decision_makers": [
+        {
+          "name": "A.J. Preller",
+          "title": "President of Baseball Ops & GM",
+          "role": "primary",
+          "public_facing": true
+        }
+      ],
+      "current_mode": "contend \u2014 35-32, in NL West wild card spot, 9 games back of Dodgers",
+      "fa_appetite": "high but CBT-constrained \u2014 $211M payroll already over second CBT threshold, limits pure FA spending",
+      "trade_style": "most aggressive trader in baseball regardless of stated constraints \u2014 consistently finds creative paths to blockbuster deals even when pundits say it can't be done; hybrid buy/sell approach likely at 2026 deadline",
+      "prospect_protection": "very low \u2014 has Salas, Mayfield, Schoolcraft as tradeable assets, history of dealing multiple top prospects in single deals",
+      "known_patterns": [
+        "Preller publicly stated 'it's looking like we're hoping to add' at 2026 deadline",
+        "Defied conventional wisdom in 2025 \u2014 made blockbuster moves despite CBT concerns and skeptical pundits who said he couldn't; rival GMs were surprised",
+        "CBT constraints are real but Preller treats them as a creative challenge, not a hard stop \u2014 uses salary swaps, creative structures, and three-team deals to work around them",
+        "Hybrid approach increasingly likely \u2014 buy impact bat while moving bloated contracts to reshape roster",
+        "Has never been to World Series despite multiple blockbuster deadline trades \u2014 but the pattern of aggression is completely consistent and unwavering",
+        "First-year manager Craig Stammen \u2014 new dynamic but Preller's approach predates any manager"
+      ],
+      "recent_shifts": "2026 has gone from 31-20 hot start to rough stretch to 35-32 current. Worst offense in MLB is the defining problem. Despite CBT constraints that pundits cite as limiting factors, Preller's history is to find a way anyway \u2014 expect creative structures rather than inaction.",
+      "default_modifier": {
+        "fits": "impact offensive player, star-level talent, Preller will find the prospects to make it work",
+        "contradicts": "pure payroll reduction, rebuilding approach, patient long-term move"
+      }
+    },
+    {
+      "team": "San Francisco Giants",
+      "abbreviation": "SFG",
+      "decision_makers": [
+        {
+          "name": "Buster Posey",
+          "title": "President of Baseball Operations",
+          "role": "primary",
+          "public_facing": true
+        },
+        {
+          "name": "Zack Minasian",
+          "title": "GM",
+          "role": "secondary",
+          "public_facing": true
+        }
+      ],
+      "current_mode": "retool",
+      "fa_appetite": "moderate \u2014 willing to spend but has faced criticism for results",
+      "trade_style": "active but results mixed, Posey still developing executive instincts",
+      "prospect_protection": "moderate",
+      "known_patterns": [
+        "Posey is the face and decision-maker \u2014 Minasian executes",
+        "Posey brings deep baseball intelligence but is still developing as an executive",
+        "Team off to disastrous 22-34 start in 2026 \u2014 front office under scrutiny",
+        "Traded for Devers in 2025, then cratered and became seller"
+      ],
+      "recent_shifts": "2026 collapse raising serious questions about Posey/Minasian's roster construction \u2014 may become sellers at deadline",
+      "default_modifier": {
+        "fits": "controllable talent, fits retool timeline, Posey-type player profile",
+        "contradicts": "major aging veteran commitment, anything that further complicates payroll"
+      }
+    }
+  ]
+}
