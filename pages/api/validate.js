@@ -3,7 +3,7 @@
 // Prompt caching enabled on both passes for performance
 
 import gmProfiles from "../../gm-profiles.json";
-import { FIT_FALLBACK, INCOMPLETE_FINDINGS_MSG } from "../../lib/constants.js";
+import { FIT_FALLBACK, INCOMPLETE_FINDINGS_MSG, MODELS, MAX_TOKENS, CHAR_LIMIT, FINDINGS_TRUNCATION_LIMIT, PASS_1_WORD_LIMIT, RETRY_DELAY_MS } from "../../lib/constants.js";
 
 export const config = {
   api: { responseLimit: false },
@@ -291,7 +291,7 @@ function userFacingError(status, rawMessage) {
 }
 
 // ── Retry wrapper — one retry on 429 with 15s backoff ────────────────────────
-async function fetchWithRetry(url, options, retries = 1, delayMs = 15000) {
+async function fetchWithRetry(url, options, retries = 1, delayMs = RETRY_DELAY_MS) {
   const res = await fetch(url, options);
   if (res.status === 429 && retries > 0) {
     await new Promise(r => setTimeout(r, delayMs));
@@ -311,7 +311,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Can't get a hit if you don't step up to the plate." });
   }
 
-  if (rumor.trim().length > 255) {
+  if (rumor.trim().length > CHAR_LIMIT) {
     return res.status(400).json({ error: "Working the count a little too hard. Keep it under 255 characters." });
   }
 
@@ -356,7 +356,7 @@ export default async function handler(req, res) {
         "3. [player name] contract salary [current year]",
         "4. [player name] position MLB trade interest [current year] — find which teams have a confirmed need at this player's primary position, who currently starts there, and any reported interest past or present",
         "",
-        "Return a SHORT report — max 900 words total — with these sections:",
+        `Return a SHORT report — max ${PASS_1_WORD_LIMIT} words total — with these sections:`,
         "RUMOR SOURCES: Prioritize articles from the last 60 days first. For older reporting, include only if it shows a team's interest that may still be unresolved. Byline, outlet, date, key quote (1 sentence max each).",
         "TEAM CONTEXT: Brief notes on both teams — roster need, payroll posture, GM name.",
         "PLAYER CONTEXT: From search results only — do not use training data.",
@@ -368,7 +368,7 @@ export default async function handler(req, res) {
         "SENTIMENT: Estimate whether chatter is reporter-driven or fan-driven. Note volume and source quality.",
         "GAPS: What you could not find. One line only.",
         "",
-        "Be brief. Lead with recent. Stop at 900 words.",
+        `Be brief. Lead with recent. Stop at ${PASS_1_WORD_LIMIT} words.`,
       ].join("\n"),
       cache_control: { type: "ephemeral" },
     },
@@ -495,8 +495,8 @@ export default async function handler(req, res) {
         method: "POST",
         headers: anthropicHeaders,
         body: JSON.stringify({
-          model: "claude-sonnet-4-6",
-          max_tokens: 2500,
+          model: MODELS.PASS_1,
+          max_tokens: MAX_TOKENS.PASS_1,
           system: searchSystemPrompt,
           tools: [{ type: "web_search_20250305", name: "web_search" }],
           tool_choice: { type: "any" },
@@ -541,8 +541,8 @@ export default async function handler(req, res) {
     }
 
     const rawFindings = searchBlocks[searchBlocks.length - 1].text;
-    const researchFindings = rawFindings.length > 4000
-      ? rawFindings.substring(0, 4000) + "\n[truncated for length]"
+    const researchFindings = rawFindings.length > FINDINGS_TRUNCATION_LIMIT
+      ? rawFindings.substring(0, FINDINGS_TRUNCATION_LIMIT) + "\n[truncated for length]"
       : rawFindings;
 
     send("status", { message: "Sources scanned. Analyzing..." });
@@ -583,8 +583,8 @@ export default async function handler(req, res) {
       method: "POST",
       headers: anthropicHeaders,
       body: JSON.stringify({
-        model: "claude-sonnet-4-6",
-        max_tokens: 1800,
+        model: MODELS.PASS_2,
+        max_tokens: MAX_TOKENS.PASS_2,
         system: analysisSystemPrompt,
         stream: true,
         messages: [{ role: "user", content: analysisUserMsg }],
