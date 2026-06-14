@@ -70,17 +70,15 @@ async function fetchContractStatus(playerId) {
     const data = await res.json();
     const person = data?.people?.[0];
     if (!person) return null;
-    console.error("BirdDog contract debug:", JSON.stringify(person?.currentContract));
+
+    const currentYear = new Date().getFullYear();
 
     const serviceTime = person.mlbDebutDate
       ? Math.floor((new Date() - new Date(person.mlbDebutDate)) / (365.25 * 24 * 60 * 60 * 1000))
       : null;
 
-    const contract = person.currentContract;
-    const contractEnd = contract?.endDate ? new Date(contract.endDate).getFullYear() : null;
-    const currentYear = new Date().getFullYear();
-
     // Arb status from service time (MLB rule: 3 years service for arb eligibility)
+    // This is the primary classification signal — currentContract is unreliable from the API
     let arbStatus = null;
     if (serviceTime !== null) {
       if (serviceTime < 3) arbStatus = "pre-arb";
@@ -90,13 +88,20 @@ async function fetchContractStatus(playerId) {
       }
     }
 
+    // Arb year 3 = final year of team control = RENTAL regardless of contractEnd
+    // The MLB Stats API does not reliably return currentContract, so service time is authoritative
+    if (arbStatus === "arb year 3 of 3") {
+      return `RENTAL — final arb year (service time: ~${serviceTime} years), free agent after ${currentYear} season`;
+    }
+
+    // Use contractEnd from API when available for multi-year contract classification
+    const contract = person.currentContract;
+    const contractEnd = contract?.endDate ? new Date(contract.endDate).getFullYear() : null;
+
     if (contractEnd) {
       const yearsRemaining = contractEnd - currentYear;
-      const isFinalArbYear = arbStatus === "arb year 3 of 3";
       if (yearsRemaining <= 0) {
         return `RENTAL — contract expires after ${currentYear} season`;
-      } else if (yearsRemaining === 1 && isFinalArbYear) {
-        return `RENTAL — final arb year, free agent after ${contractEnd} season`;
       } else if (yearsRemaining === 1) {
         return `CONTROLLABLE — 1 year remaining (through ${contractEnd})${arbStatus ? `, ${arbStatus}` : ""}`;
       } else {
@@ -104,6 +109,7 @@ async function fetchContractStatus(playerId) {
       }
     }
 
+    // Service time fallback for pre-arb and arb year 1-2 when no contractEnd available
     if (arbStatus) {
       return `CONTROLLABLE — ${arbStatus} (service time: ~${serviceTime} years)`;
     }
@@ -448,9 +454,9 @@ export default async function handler(req, res) {
         "",
         `roster: Use the injected PLAYER STATS to ground this in real numbers. Name the position. State their key strengths and any weaknesses relevant to this specific trade context — use the stats to support the claim, not substitute for it. If the current season differs meaningfully from career norms and the research findings mention it, flag it. If no destination is named, describe what type of team need this player fills and what their profile suits. If stats are unavailable, write: '${FIT_FALLBACK.roster}'`,
         "",
-        `financial: The player's contract status is in PLAYER CONTRACT STATUS — use that classification exactly, never reclassify from training data. State it plainly first: 'Ward is a rental' or 'Skubal is controllable with 2 arb years remaining'. If extension context was found in research findings, upgrade RENTAL to EXTENSION CANDIDATE and explain. Then assess whether THIS team can afford the player and what that means for the prospect cost. A rental costs fewer prospects than a controllable player. If no contract status is available, write: '${FIT_FALLBACK.financial}'`,
+        `financial: The player's contract status is in PLAYER CONTRACT STATUS — use that classification exactly, never reclassify from training data. State it plainly first: 'Ward is a rental' or 'Skubal is a rental in his final arb year'. If extension context was found in research findings, upgrade RENTAL to EXTENSION CANDIDATE and explain. Then assess whether THIS team can afford the player and what that means for the prospect cost. A rental costs fewer prospects than a controllable player. CRITICAL: If no PLAYER CONTRACT STATUS section is present in this message, you have no contract data — write: '${FIT_FALLBACK.financial}'. Do NOT use your training data to fill in contract details.`,
         "",
-        `strategic: Does this move fit where THIS team is headed right now? Factor in the contract type — a rental is a one-postseason bet, a controllable player is a franchise asset, an extension candidate is both. Factor in their current record from the live standings. If no strategic context is available, write: '${FIT_FALLBACK.strategic}'`,
+        `strategic: Does this move fit where THIS team is headed right now? Factor in the contract type from PLAYER CONTRACT STATUS — a rental is a one-postseason bet, a controllable player is a franchise asset, an extension candidate is both. Factor in their current record from the live standings. CRITICAL: Use only the injected contract classification — never infer contract type from your training data. If no PLAYER CONTRACT STATUS section is present, do not reference contract type. If no strategic context is available, write: '${FIT_FALLBACK.strategic}'`,
         "",
         `gm_profile: Use the injected GM profile — name the GM, their current operating style in one sentence, whether this move fits or contradicts that style. If no GM profile was injected, write: '${FIT_FALLBACK.gm_profile}'`,
         "",
