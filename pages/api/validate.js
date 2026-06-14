@@ -70,7 +70,8 @@ async function fetchContractStatus(playerId) {
     const data = await res.json();
     const person = data?.people?.[0];
     if (!person) return null;
-console.error("BirdDog contract debug:", JSON.stringify(person?.currentContract));
+    console.error("BirdDog contract debug:", JSON.stringify(person?.currentContract));
+
     const serviceTime = person.mlbDebutDate
       ? Math.floor((new Date() - new Date(person.mlbDebutDate)) / (365.25 * 24 * 60 * 60 * 1000))
       : null;
