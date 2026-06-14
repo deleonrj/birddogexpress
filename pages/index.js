@@ -1,7 +1,7 @@
 // pages/index.js
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Analytics } from "@vercel/analytics/react";
-import { FIT_FALLBACK, INCOMPLETE_FINDINGS_MSG } from "../lib/constants.js";
+import { FIT_FALLBACK, INCOMPLETE_FINDINGS_MSG, CHAR_LIMIT } from "../lib/constants.js";
 
 const VERDICT_CONFIG = {
   CORROBORATED: { label: "Corroborated",         color: "#3B6D11", bg: "#EAF3DE", border: "#639922" },
@@ -40,7 +40,6 @@ const STEPS = [
 const STEP_SEQUENCE = ["received","national","local","crossmarket","fit","scoring"];
 const STEP_TIMINGS  = { received:0, national:2, local:6, crossmarket:10, fit:16, scoring:22 };
 
-const CHAR_LIMIT = 255;
 const mono = { fontFamily: "ui-monospace, 'Courier New', monospace" };
 
 const FOCUS_STYLE = `
