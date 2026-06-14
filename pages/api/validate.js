@@ -70,7 +70,7 @@ async function fetchContractStatus(playerId) {
     const data = await res.json();
     const person = data?.people?.[0];
     if (!person) return null;
-console.error("BirdDog contract debug:", JSON.stringify(person?.currentContract));
+
     const serviceTime = person.mlbDebutDate
       ? Math.floor((new Date() - new Date(person.mlbDebutDate)) / (365.25 * 24 * 60 * 60 * 1000))
       : null;
@@ -91,8 +91,11 @@ console.error("BirdDog contract debug:", JSON.stringify(person?.currentContract)
 
     if (contractEnd) {
       const yearsRemaining = contractEnd - currentYear;
+      const isFinalArbYear = arbStatus === "arb year 3 of 3";
       if (yearsRemaining <= 0) {
         return `RENTAL — contract expires after ${currentYear} season`;
+      } else if (yearsRemaining === 1 && isFinalArbYear) {
+        return `RENTAL — final arb year, free agent after ${contractEnd} season`;
       } else if (yearsRemaining === 1) {
         return `CONTROLLABLE — 1 year remaining (through ${contractEnd})${arbStatus ? `, ${arbStatus}` : ""}`;
       } else {
