@@ -53,71 +53,106 @@ async function resolvePlayerId(playerName) {
     const people = data?.people;
     if (!people?.length) return null;
     const player = people.find(p => p.active) || people[0];
-    return player?.id || null;
+    const playerId = player?.id || null;
+    console.log("BirdDog:playerID", JSON.stringify({ playerName, playerId }));
+    return playerId;
   } catch (err) {
-    console.error("BirdDog player ID resolve error:", err.message);
+    console.error("BirdDog:playerID error:", err.message);
     return null;
   }
 }
 
-// ── Step 2a: Fetch contract status using resolved player ID ───────────────────
+// ── Step 2a: Classify contract from a person object (shared by both fetch attempts) ──
+function classifyContract(person, currentYear) {
+  const serviceTime = person.mlbDebutDate
+    ? Math.floor((new Date() - new Date(person.mlbDebutDate)) / (365.25 * 24 * 60 * 60 * 1000))
+    : null;
+
+  // Arb status from service time — primary signal, API contract data is unreliable
+  let arbStatus = null;
+  if (serviceTime !== null) {
+    if (serviceTime < 3) arbStatus = "pre-arb";
+    else if (serviceTime < 6) {
+      const arbYear = Math.min(Math.floor(serviceTime) - 2, 3);
+      arbStatus = `arb year ${arbYear} of 3`;
+    }
+  }
+
+  // Arb year 3 = final year of team control = RENTAL regardless of contractEnd
+  if (arbStatus === "arb year 3 of 3") {
+    const result = `RENTAL — final arb year (service time: ~${serviceTime} years), free agent after ${currentYear} season`;
+    console.log("BirdDog:contract", JSON.stringify({ serviceTime, arbStatus, classification: "RENTAL", source: "serviceTime" }));
+    return result;
+  }
+
+  // Try contractEnd from either hydration key
+  const contract = person.currentContract || (person.contracts && person.contracts[0]);
+  const contractEnd = contract && contract.endDate ? new Date(contract.endDate).getFullYear() : null;
+
+  if (contractEnd) {
+    const yearsRemaining = contractEnd - currentYear;
+    let classification;
+    if (yearsRemaining <= 0) {
+      classification = `RENTAL — contract expires after ${currentYear} season`;
+    } else if (yearsRemaining === 1) {
+      classification = `CONTROLLABLE — 1 year remaining (through ${contractEnd})${arbStatus ? `, ${arbStatus}` : ""}`;
+    } else {
+      classification = `CONTROLLABLE — ${yearsRemaining} years remaining (through ${contractEnd})${arbStatus ? `, ${arbStatus}` : ""}`;
+    }
+    console.log("BirdDog:contract", JSON.stringify({ serviceTime, arbStatus, contractEnd, yearsRemaining, classification: yearsRemaining <= 0 ? "RENTAL" : "CONTROLLABLE", source: "contractEnd" }));
+    return classification;
+  }
+
+  // Service time fallback for pre-arb and arb year 1-2
+  if (arbStatus) {
+    const classification = `CONTROLLABLE — ${arbStatus} (service time: ~${serviceTime} years)`;
+    console.log("BirdDog:contract", JSON.stringify({ serviceTime, arbStatus, classification: "CONTROLLABLE", source: "serviceTimeFallback" }));
+    return classification;
+  }
+
+  console.log("BirdDog:contract", JSON.stringify({ serviceTime, arbStatus, classification: null, source: "noData" }));
+  return null;
+}
+
+// ── Step 2a: Fetch contract status — three-attempt fallback chain ─────────────
+// Attempt 1: currentContract hydration
+// Attempt 2: contracts hydration (only on null from attempt 1)
+// Attempt 3: inject UNKNOWN to block Pass 2 from using training data
 async function fetchContractStatus(playerId) {
   if (!playerId) return null;
+  const currentYear = new Date().getFullYear();
+
   try {
-    const url = `https://statsapi.mlb.com/api/v1/people/${playerId}?hydrate=currentContract`;
-    const res = await fetch(url);
-    if (!res.ok) return null;
-    const data = await res.json();
-    const person = data?.people?.[0];
-    if (!person) return null;
-
-    const currentYear = new Date().getFullYear();
-
-    const serviceTime = person.mlbDebutDate
-      ? Math.floor((new Date() - new Date(person.mlbDebutDate)) / (365.25 * 24 * 60 * 60 * 1000))
-      : null;
-
-    // Arb status from service time (MLB rule: 3 years service for arb eligibility)
-    // This is the primary classification signal — currentContract is unreliable from the API
-    let arbStatus = null;
-    if (serviceTime !== null) {
-      if (serviceTime < 3) arbStatus = "pre-arb";
-      else if (serviceTime < 6) {
-        const arbYear = Math.min(Math.floor(serviceTime) - 2, 3);
-        arbStatus = `arb year ${arbYear} of 3`;
+    // Attempt 1: currentContract hydration
+    const res1 = await fetch(`https://statsapi.mlb.com/api/v1/people/${playerId}?hydrate=currentContract`);
+    if (res1.ok) {
+      const data1 = await res1.json();
+      const person1 = data1 && data1.people && data1.people[0];
+      if (person1) {
+        const result = classifyContract(person1, currentYear);
+        if (result) return result;
       }
     }
 
-    // Arb year 3 = final year of team control = RENTAL regardless of contractEnd
-    // The MLB Stats API does not reliably return currentContract, so service time is authoritative
-    if (arbStatus === "arb year 3 of 3") {
-      return `RENTAL — final arb year (service time: ~${serviceTime} years), free agent after ${currentYear} season`;
-    }
-
-    // Use contractEnd from API when available for multi-year contract classification
-    const contract = person.currentContract;
-    const contractEnd = contract?.endDate ? new Date(contract.endDate).getFullYear() : null;
-
-    if (contractEnd) {
-      const yearsRemaining = contractEnd - currentYear;
-      if (yearsRemaining <= 0) {
-        return `RENTAL — contract expires after ${currentYear} season`;
-      } else if (yearsRemaining === 1) {
-        return `CONTROLLABLE — 1 year remaining (through ${contractEnd})${arbStatus ? `, ${arbStatus}` : ""}`;
-      } else {
-        return `CONTROLLABLE — ${yearsRemaining} years remaining (through ${contractEnd})${arbStatus ? `, ${arbStatus}` : ""}`;
+    // Attempt 2: contracts hydration (fallback)
+    console.log("BirdDog:contract", JSON.stringify({ playerId, note: "currentContract null, trying contracts hydration" }));
+    const res2 = await fetch(`https://statsapi.mlb.com/api/v1/people/${playerId}?hydrate=contracts`);
+    if (res2.ok) {
+      const data2 = await res2.json();
+      const person2 = data2 && data2.people && data2.people[0];
+      if (person2) {
+        const result = classifyContract(person2, currentYear);
+        if (result) return result;
       }
     }
 
-    // Service time fallback for pre-arb and arb year 1-2 when no contractEnd available
-    if (arbStatus) {
-      return `CONTROLLABLE — ${arbStatus} (service time: ~${serviceTime} years)`;
-    }
+    // Attempt 3: all sources exhausted — UNKNOWN blocks Pass 2 training data
+    console.log("BirdDog:contract", JSON.stringify({ playerId, note: "all sources null, injecting UNKNOWN" }));
+    return "UNKNOWN";
 
-    return null;
   } catch (err) {
-    console.error("BirdDog contract fetch error:", err.message);
-    return null;
+    console.error("BirdDog:contract error:", err.message);
+    return "UNKNOWN";
   }
 }
 
@@ -170,6 +205,8 @@ async function fetchPlayerStats(playerId, currentYear) {
       return group_?.splits?.find(s => s.split?.code === splitCode)?.stat || null;
     };
 
+    console.log("BirdDog:stats", JSON.stringify({ playerId, isPitcher, hasSeasonStats: !!(seasonHitting || seasonPitching) }));
+
     if (isPitcher && seasonPitching) {
       const vsLHB = findSplit("pitching", "vl");
       const vsRHB = findSplit("pitching", "vr");
@@ -204,8 +241,16 @@ async function fetchPlayerStats(playerId, currentYear) {
 }
 
 // ── Format contract section for Pass 2 injection ──────────────────────────────
+// UNKNOWN is injected explicitly when all API sources fail — tells Pass 2 to use fallback phrase
 function formatContractSection(playerName, contractStatus) {
   if (!contractStatus) return "";
+  if (contractStatus === "UNKNOWN") {
+    return [
+      "PLAYER CONTRACT STATUS: UNKNOWN",
+      `Player: ${playerName}`,
+      "No contract data available from any source. Do not infer contract status from training data. Use the financial fallback phrase.",
+    ].join("\n");
+  }
   return [
     "PLAYER CONTRACT STATUS (from MLB Stats API — authoritative, not training data):",
     `Player: ${playerName}`,
