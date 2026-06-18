@@ -62,6 +62,70 @@ async function resolvePlayerId(playerName) {
   }
 }
 
+// ── Match a raw team name/abbreviation against the canonical gm-profiles.json list ──
+// Returns the canonical team name (e.g. "Detroit Tigers") or null if no match.
+// Used by both seller resolution (API team name) and rumor text scanning (P0-2: normalized
+// matching only — never loose substring matching against ambiguous rumor wording).
+function matchCanonicalTeam(rawName) {
+  if (!rawName) return null;
+  const normalized = rawName.trim().toLowerCase();
+  const match = gmProfiles.teams.find(team =>
+    team.team.toLowerCase() === normalized ||
+    team.abbreviation.toLowerCase() === normalized
+  );
+  return match ? match.team : null;
+}
+
+// ── Step 1b: Resolve player's current team from MLB Stats API ────────────────
+// Required for suitor role tagging (seller vs buyer) — see suitors-role-distinction-spec.
+// Independent of resolvePlayerId's caller; only needs playerId.
+async function fetchCurrentTeam(playerId) {
+  if (!playerId) return null;
+  try {
+    const url = `https://statsapi.mlb.com/api/v1/people/${playerId}?hydrate=currentTeam`;
+    const res = await fetch(url);
+    if (!res.ok) {
+      console.error("BirdDog:currentTeam error:", `HTTP ${res.status}`);
+      return null;
+    }
+    const data = await res.json();
+    const person = data?.people?.[0];
+    const rawTeamName = person?.currentTeam?.name || null;
+    const canonicalTeam = matchCanonicalTeam(rawTeamName);
+    console.log("BirdDog:currentTeam", JSON.stringify({ playerId, rawTeamName, canonicalTeam }));
+    return canonicalTeam;
+  } catch (err) {
+    console.error("BirdDog:currentTeam error:", err.message);
+    return null;
+  }
+}
+
+// ── Find which canonical teams are explicitly named in the rumor's raw input text ──
+// P0-2: normalized matching only. Scans against gm-profiles.json's team/abbreviation
+// fields — never loose substring matching that risks city-name collisions
+// (e.g. "Los Angeles" matching both Angels and Dodgers, "Chicago" matching Cubs and White Sox).
+function findTeamsNamedInRumor(rumor) {
+  if (!rumor) return [];
+  const text = rumor.toLowerCase();
+  const found = [];
+  for (const team of gmProfiles.teams) {
+    const teamLower = team.team.toLowerCase();
+    const abbrevLower = team.abbreviation.toLowerCase();
+    const parts = teamLower.split(" ");
+    const nickname = parts[parts.length - 1];
+    // Word-boundary match on full name, abbreviation, or nickname — not raw substring,
+    // to avoid partial-word false positives (e.g. "Sox" inside an unrelated word).
+    const pattern = new RegExp(`\\b(${escapeRegex(teamLower)}|${escapeRegex(abbrevLower)}|${escapeRegex(nickname)})\\b`, "i");
+    if (pattern.test(text)) found.push(team.team);
+  }
+  return found;
+}
+
+// ── Escape special regex characters in team names/abbreviations before building patterns ──
+function escapeRegex(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 // ── Step 2a: Classify contract from a person object (shared by both fetch attempts) ──
 function classifyContract(person, currentYear) {
   const serviceTime = person.mlbDebutDate
@@ -238,6 +302,50 @@ async function fetchPlayerStats(playerId, currentYear) {
     console.error("BirdDog stats fetch error:", err.message);
     return null;
   }
+}
+
+// ── Resolve buyer/seller roles for teams named in the rumor — P0-1 through P0-5 ──
+// sellerTeam: canonical name of player's current team, or null if resolution failed
+// rumorTeams: canonical names of teams explicitly mentioned in the rumor's raw text
+// Returns { seller, buyers, resolutionFailed }
+//   seller: canonical team name if known, else null
+//   buyers: array of canonical team names tagged as buyer (named in rumor, not the seller)
+//   resolutionFailed: true if sellerTeam could not be determined (P0-5 degraded path)
+function resolveTeamRoles(sellerTeam, rumorTeams) {
+  if (!sellerTeam) {
+    // P0-5: resolution failed — seller unknown. Still suppress any team named directly
+    // in the rumor text (no API dependency needed for this part), but cannot tag a
+    // seller since we don't know who currently rosters the player.
+    console.log("BirdDog:teamRole", JSON.stringify({ sellerTeam: null, rumorTeams, note: "resolution failed, degraded suppression only" }));
+    return { seller: null, buyers: rumorTeams, resolutionFailed: true };
+  }
+  const buyers = rumorTeams.filter(t => t !== sellerTeam);
+  console.log("BirdDog:teamRole", JSON.stringify({ seller: sellerTeam, buyers }));
+  return { seller: sellerTeam, buyers, resolutionFailed: false };
+}
+
+// ── Format team role context for Pass 2 injection ─────────────────────────────
+// Tells Pass 2 which team is the seller (suppress from suitors unless retention signal
+// exists, see P0-4) and which teams are buyers (always suppress from suitors, P0-3).
+function formatTeamRoleSection(roles) {
+  if (!roles.seller && roles.buyers.length === 0) return "";
+
+  const lines = ["TEAM ROLES IN THIS RUMOR (authoritative — do not infer from training data):"];
+
+  if (roles.seller) {
+    lines.push(`Seller (player's current team): ${roles.seller}`);
+    lines.push(`Do NOT list ${roles.seller} in potential_suitors as a generic competing buyer — they already have the player.`);
+    lines.push(`Only include ${roles.seller} in potential_suitors if research findings show a specific retention signal (e.g. extension talks, reported reluctance to deal, stalled asking price). If included, frame it explicitly as a retention angle, not a standard suitor, and it must be sorted last regardless of tier.`);
+  } else if (roles.resolutionFailed) {
+    lines.push("Seller team could not be determined from live data this run.");
+  }
+
+  if (roles.buyers.length > 0) {
+    lines.push(`Teams already named in this rumor as interested parties: ${roles.buyers.join(", ")}.`);
+    lines.push(`Do NOT list ${roles.buyers.length > 1 ? "these teams" : "this team"} again in potential_suitors — they are already the subject of the rumor, not a separate suitor to surface.`);
+  }
+
+  return lines.join("\n");
 }
 
 // ── Format contract section for Pass 2 injection ──────────────────────────────
@@ -513,6 +621,10 @@ export default async function handler(req, res) {
         "Assess against primary position first. Secondary position only if findings confirm it.",
         "If findings don't support naming suitors, return empty array and null darkhorse.",
         "",
+        "TEAM ROLES — check the TEAM ROLES section in this message before generating suitors:",
+        "If a team is listed there as the seller or as already named in the rumor, follow its instructions exactly — do not add that team back into potential_suitors as a generic third-tier suitor, even if the findings independently mention them in a suitor-sounding context.",
+        "A retention angle (seller may keep the player) is the ONLY exception, and only when the TEAM ROLES section explicitly permits it AND research findings show a specific, named retention signal — not generic baseball logic like 'any team could keep any player.' If included, it must be the last entry in potential_suitors regardless of tier, and its rationale must reference the specific signal found, not assert retention as a generic possibility.",
+        "",
         "sources_found: List each source as exactly 'Firstname Lastname - Outlet - Date' with no variation. If date is unknown use the year. Max 5 sources. Only include named reporters with bylines — not roundup sites or analyst columns.",
         "",
         "cross_market: Always return this object — never null or missing. Use CONFIRMED if the market has clear reporting, PARTIAL if mentioned but not confirmed, SILENT if nothing found.",
@@ -564,12 +676,17 @@ export default async function handler(req, res) {
       resolvePlayerId(playerName),
     ]);
 
-    // ── PARALLEL STAGE 2: Contract + stats (use resolved player ID) ───────────
+    // ── PARALLEL STAGE 2: Contract + stats + current team (use resolved player ID) ──
     // These run after Stage 1 but Pass 1 is still processing — no wall time added
-    const [contractStatus, playerStats] = await Promise.all([
+    const [contractStatus, playerStats, sellerTeam] = await Promise.all([
       fetchContractStatus(playerId),
       fetchPlayerStats(playerId, thisYear),
+      fetchCurrentTeam(playerId),
     ]);
+
+    // ── Resolve buyer/seller roles from rumor text + resolved seller team — P0-1 through P0-5 ──
+    const rumorTeams = findTeamsNamedInRumor(rumor);
+    const teamRoles = resolveTeamRoles(sellerTeam, rumorTeams);
 
     if (!searchRes.ok) {
       const errText = await searchRes.text();
@@ -616,14 +733,20 @@ export default async function handler(req, res) {
     const standingsSummary  = buildStandingsSummary(standingsRes);
     const contractSection   = formatContractSection(playerName, contractStatus);
     const statsSection      = formatStatsSection(playerName, playerStats);
+    const teamRoleSection   = formatTeamRoleSection(teamRoles);
 
+    // Contract status and team roles are critical classifications that Pass 2 has
+    // historically overridden with training data when buried later in the message.
+    // Both go first, ahead of research findings, so they can't lose priority.
     const analysisUserMsg = [
       `Rumor: "${rumor}"`,
       "",
+      contractSection,
+      "",
+      teamRoleSection,
+      "",
       `RESEARCH FINDINGS (${today}):`,
       researchFindings,
-      "",
-      contractSection,
       "",
       statsSection,
       "",
