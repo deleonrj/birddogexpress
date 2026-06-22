@@ -31,7 +31,7 @@ const MLB_TEAMS = [
 
 const STEPS = [
   { key: "received",    label: "Rumor received",               detail: (r) => r.length > 60 ? r.substring(0, 60) + "…" : r },
-  { key: "national",    label: "Searching national reporters",  detail: () => "Passan · Rosenthal · Olney · Feinsand · Sammon · Nightengale · Morosi" },
+  { key: "national",    label: "Searching national reporters",  detail: () => "Like: Passan · Rosenthal · Olney · Feinsand · Sammon · Nightengale · Morosi" },
   { key: "local",       label: "Checking local beat coverage",  detail: () => "Selling market · Buying market · Regional outlets" },
   { key: "crossmarket", label: "Cross-referencing markets",     detail: () => "Comparing selling market · buying market · national intel" },
   { key: "fit",         label: "Analyzing player fit",          detail: () => "Roster · Financial · Strategic · GM profile" },
